@@ -21,20 +21,36 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Check for API key
+        id: check_key
+        env:
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+        run: |
+          if [ -n "$ELEVENLABS_API_KEY" ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::ELEVENLABS_API_KEY secret is not set — skipping audio generation."
+          fi
+
       - name: Set up Python
+        if: steps.check_key.outputs.available == 'true'
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
 
       - name: Install Python dependencies
+        if: steps.check_key.outputs.available == 'true'
         run: pip install requests
 
       - name: Generate audio files
+        if: steps.check_key.outputs.available == 'true'
         env:
           ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
         run: python .github/scripts/generate_audio.py
 
       - name: Commit and push generated audio
+        if: steps.check_key.outputs.available == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
