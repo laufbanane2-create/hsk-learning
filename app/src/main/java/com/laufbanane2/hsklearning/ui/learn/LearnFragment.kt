@@ -1,17 +1,19 @@
 package com.laufbanane2.hsklearning.ui.learn
 
 import android.content.Context
+import android.media.MediaPlayer
 import android.os.Bundle
 import android.speech.tts.TextToSpeech
-import android.speech.tts.UtteranceProgressListener
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
+import com.laufbanane2.hsklearning.data.ElevenLabsClient
 import com.laufbanane2.hsklearning.data.StatsManager
 import com.laufbanane2.hsklearning.data.VocabData
 import com.laufbanane2.hsklearning.data.VocabItem
 import com.laufbanane2.hsklearning.databinding.FragmentLearnBinding
+import java.io.File
 import java.util.Locale
 
 class LearnFragment : Fragment() {
@@ -22,10 +24,23 @@ class LearnFragment : Fragment() {
     private lateinit var statsManager: StatsManager
     private var tts: TextToSpeech? = null
     private var ttsReady = false
+    private var mediaPlayer: MediaPlayer? = null
+
+    // Monotonically increasing ID for the "current" audio request.
+    // Any callback that arrives with a stale ID is discarded, preventing
+    // ElevenLabs and the TTS fallback from playing simultaneously.
+    private var currentUtteranceId = 0
 
     private var vocabList: List<VocabItem> = emptyList()
     private var currentIndex = 0
     private var currentItem: VocabItem? = null
+
+    // Settings that were in effect the last time loadVocab() ran.
+    // Used to avoid reshuffling the deck when the user simply switches away
+    // to another app and comes back (Problem 1).
+    private var loadedHsk1 = false
+    private var loadedHsk2 = false
+    private var vocabLoaded = false
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -48,9 +63,19 @@ class LearnFragment : Fragment() {
         binding.buttonRestart.setOnClickListener { loadVocab() }
     }
 
+    // Only reload vocab when either:
+    //  • it hasn't been loaded yet (fresh fragment after a tab switch), or
+    //  • the user changed the HSK-level settings while away.
+    // This prevents a new word from appearing whenever the user multi-tasks
+    // to another app and returns (Problem 1).
     override fun onResume() {
         super.onResume()
-        loadVocab()
+        val prefs = requireContext().getSharedPreferences("settings", Context.MODE_PRIVATE)
+        val hsk1 = prefs.getBoolean("hsk1_enabled", true)
+        val hsk2 = prefs.getBoolean("hsk2_enabled", false)
+        if (!vocabLoaded || hsk1 != loadedHsk1 || hsk2 != loadedHsk2) {
+            loadVocab()
+        }
     }
 
     private fun initTts() {
@@ -60,20 +85,76 @@ class LearnFragment : Fragment() {
                 ttsReady = result != TextToSpeech.LANG_MISSING_DATA &&
                         result != TextToSpeech.LANG_NOT_SUPPORTED
                 tts?.setSpeechRate(0.85f)
-                tts?.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
-                    override fun onStart(utteranceId: String?) {}
-                    override fun onDone(utteranceId: String?) {}
-                    @Deprecated("Deprecated in Java")
-                    override fun onError(utteranceId: String?) {}
-                })
-                currentItem?.let { speakSentence(it.sentence) }
+                // Do NOT call speakSentence here – showCurrentWord() already
+                // triggered it, and calling it again would cause a double-play
+                // (Problem 3).
             }
         }
     }
 
+    // Stop whatever audio is currently active (ElevenLabs MediaPlayer or TTS).
+    private fun stopCurrentAudio() {
+        tts?.stop()
+        mediaPlayer?.apply {
+            if (isPlaying) stop()
+            release()
+        }
+        mediaPlayer = null
+    }
+
+    // Entry point for all audio playback.
+    // Increments the utterance ID so that any in-flight callbacks for the
+    // previous word are silently discarded when they arrive (Problem 3).
     private fun speakSentence(sentence: String) {
+        val utteranceId = ++currentUtteranceId
+        stopCurrentAudio()
+
+        val apiKey = requireContext()
+            .getSharedPreferences("settings", Context.MODE_PRIVATE)
+            .getString("elevenlabs_api_key", "") ?: ""
+
+        if (apiKey.isNotBlank()) {
+            ElevenLabsClient(apiKey).generateSpeech(
+                text = sentence,
+                onAudioBytes = { bytes ->
+                    // Discard if the user has already moved to the next word.
+                    if (utteranceId == currentUtteranceId) {
+                        playAudioBytes(bytes)
+                    }
+                },
+                onError = {
+                    // ElevenLabs failed – fall back to device TTS.
+                    if (utteranceId == currentUtteranceId) {
+                        speakWithTts(sentence)
+                    }
+                }
+            )
+        } else {
+            speakWithTts(sentence)
+        }
+    }
+
+    private fun speakWithTts(sentence: String) {
         if (ttsReady) {
             tts?.speak(sentence, TextToSpeech.QUEUE_FLUSH, null, "sentence_${System.currentTimeMillis()}")
+        }
+    }
+
+    private fun playAudioBytes(bytes: ByteArray) {
+        val tempFile = File(requireContext().cacheDir, "elevenlabs_audio.mp3")
+        tempFile.writeBytes(bytes)
+        activity?.runOnUiThread {
+            stopCurrentAudio()
+            try {
+                mediaPlayer = MediaPlayer().apply {
+                    setDataSource(tempFile.absolutePath)
+                    prepare()
+                    start()
+                }
+            } catch (e: Exception) {
+                // If playback fails, fall back to TTS for the current item.
+                currentItem?.let { speakWithTts(it.sentence) }
+            }
         }
     }
 
@@ -81,6 +162,9 @@ class LearnFragment : Fragment() {
         val prefs = requireContext().getSharedPreferences("settings", Context.MODE_PRIVATE)
         val hsk1 = prefs.getBoolean("hsk1_enabled", true)
         val hsk2 = prefs.getBoolean("hsk2_enabled", false)
+        loadedHsk1 = hsk1
+        loadedHsk2 = hsk2
+        vocabLoaded = true
         vocabList = VocabData.getVocab(hsk1, hsk2).shuffled()
         currentIndex = 0
 
@@ -161,9 +245,10 @@ class LearnFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
-        tts?.stop()
+        stopCurrentAudio()
         tts?.shutdown()
         tts = null
         _binding = null
     }
 }
+

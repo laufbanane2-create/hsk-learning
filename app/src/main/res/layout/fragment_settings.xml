@@ -1,48 +1,96 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
+<ScrollView
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="24dp">
+    android:fillViewport="true">
 
-    <TextView
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/settings_title"
-        android:textSize="24sp"
-        android:textStyle="bold"
-        android:layout_marginBottom="8dp" />
+        android:orientation="vertical"
+        android:padding="24dp">
 
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/settings_subtitle"
-        android:textSize="14sp"
-        android:textColor="?android:attr/textColorSecondary"
-        android:layout_marginBottom="24dp" />
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/settings_title"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp" />
 
-    <CheckBox
-        android:id="@+id/checkboxHsk1"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/hsk1_label"
-        android:textSize="18sp"
-        android:layout_marginBottom="12dp" />
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/settings_subtitle"
+            android:textSize="14sp"
+            android:textColor="?android:attr/textColorSecondary"
+            android:layout_marginBottom="24dp" />
 
-    <CheckBox
-        android:id="@+id/checkboxHsk2"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/hsk2_label"
-        android:textSize="18sp"
-        android:layout_marginBottom="24dp" />
+        <CheckBox
+            android:id="@+id/checkboxHsk1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/hsk1_label"
+            android:textSize="18sp"
+            android:layout_marginBottom="12dp" />
 
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/settings_note"
-        android:textSize="12sp"
-        android:textColor="?android:attr/textColorSecondary" />
+        <CheckBox
+            android:id="@+id/checkboxHsk2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/hsk2_label"
+            android:textSize="18sp"
+            android:layout_marginBottom="24dp" />
 
-</LinearLayout>
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/settings_note"
+            android:textSize="12sp"
+            android:textColor="?android:attr/textColorSecondary"
+            android:layout_marginBottom="32dp" />
+
+        <!-- ElevenLabs section -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/elevenlabs_section_title"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/elevenlabs_api_key_hint_description"
+            android:textSize="13sp"
+            android:textColor="?android:attr/textColorSecondary"
+            android:layout_marginBottom="12dp" />
+
+        <EditText
+            android:id="@+id/editApiKey"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/elevenlabs_api_key_hint"
+            android:inputType="textPassword"
+            android:maxLines="1"
+            android:layout_marginBottom="8dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/buttonSaveApiKey"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/elevenlabs_save_key"
+            android:layout_marginBottom="16dp" />
+
+        <TextView
+            android:id="@+id/textQuota"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="14sp"
+            android:textColor="?android:attr/textColorSecondary"
+            android:visibility="gone" />
+
+    </LinearLayout>
+</ScrollView>
