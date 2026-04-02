@@ -1,9 +1,8 @@
 package com.laufbanane2.hsklearning.ui.learn
 
 import android.content.Context
+import android.media.MediaPlayer
 import android.os.Bundle
-import android.speech.tts.TextToSpeech
-import android.speech.tts.UtteranceProgressListener
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -12,7 +11,6 @@ import com.laufbanane2.hsklearning.data.StatsManager
 import com.laufbanane2.hsklearning.data.VocabData
 import com.laufbanane2.hsklearning.data.VocabItem
 import com.laufbanane2.hsklearning.databinding.FragmentLearnBinding
-import java.util.Locale
 
 class LearnFragment : Fragment() {
 
@@ -20,8 +18,7 @@ class LearnFragment : Fragment() {
     private val binding get() = _binding!!
 
     private lateinit var statsManager: StatsManager
-    private var tts: TextToSpeech? = null
-    private var ttsReady = false
+    private var mediaPlayer: MediaPlayer? = null
 
     private var vocabList: List<VocabItem> = emptyList()
     private var currentIndex = 0
@@ -39,10 +36,8 @@ class LearnFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         statsManager = StatsManager(requireContext())
 
-        initTts()
-
         binding.buttonShow.setOnClickListener { revealAnswer() }
-        binding.textChinese.setOnClickListener { currentItem?.let { speakSentence(it.sentence) } }
+        binding.textChinese.setOnClickListener { currentItem?.let { playAudio(it.id) } }
         binding.buttonRight.setOnClickListener { handleAnswer(correct = true) }
         binding.buttonWrong.setOnClickListener { handleAnswer(correct = false) }
         binding.buttonRestart.setOnClickListener { loadVocab() }
@@ -53,28 +48,11 @@ class LearnFragment : Fragment() {
         loadVocab()
     }
 
-    private fun initTts() {
-        tts = TextToSpeech(requireContext()) { status ->
-            if (status == TextToSpeech.SUCCESS) {
-                val result = tts?.setLanguage(Locale.SIMPLIFIED_CHINESE)
-                ttsReady = result != TextToSpeech.LANG_MISSING_DATA &&
-                        result != TextToSpeech.LANG_NOT_SUPPORTED
-                tts?.setSpeechRate(0.85f)
-                tts?.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
-                    override fun onStart(utteranceId: String?) {}
-                    override fun onDone(utteranceId: String?) {}
-                    @Deprecated("Deprecated in Java")
-                    override fun onError(utteranceId: String?) {}
-                })
-                currentItem?.let { speakSentence(it.sentence) }
-            }
-        }
-    }
-
-    private fun speakSentence(sentence: String) {
-        if (ttsReady) {
-            tts?.speak(sentence, TextToSpeech.QUEUE_FLUSH, null, "sentence_${System.currentTimeMillis()}")
-        }
+    private fun playAudio(itemId: String) {
+        val resId = resources.getIdentifier(itemId, "raw", requireContext().packageName)
+        if (resId == 0) return
+        mediaPlayer?.release()
+        mediaPlayer = MediaPlayer.create(requireContext(), resId)?.also { it.start() }
     }
 
     private fun loadVocab() {
@@ -121,7 +99,7 @@ class LearnFragment : Fragment() {
         val wrong = statsManager.getWrong(item.id)
         binding.textStats.text = "✓ $correct   ✗ $wrong"
 
-        speakSentence(item.sentence)
+        playAudio(item.id)
     }
 
     private fun revealAnswer() {
@@ -161,9 +139,8 @@ class LearnFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
-        tts?.stop()
-        tts?.shutdown()
-        tts = null
+        mediaPlayer?.release()
+        mediaPlayer = null
         _binding = null
     }
 }
