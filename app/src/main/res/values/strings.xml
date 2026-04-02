@@ -20,7 +20,7 @@
     <!-- Settings screen -->
     <string name="settings_title">Settings</string>
     <string name="settings_subtitle">Select which HSK levels to practise:</string>
-    <string name="hsk1_label">HSK 1 (150 basic words)</string>
-    <string name="hsk2_label">HSK 2 (150 elementary words)</string>
+    <string name="hsk1_label">HSK 1 (35 basic words)</string>
+    <string name="hsk2_label">HSK 2 (35 elementary words)</string>
     <string name="settings_note">Tap Learn to start a new session with the updated selection.</string>
 </resources>

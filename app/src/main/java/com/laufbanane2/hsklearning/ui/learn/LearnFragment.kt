@@ -102,7 +102,7 @@ class LearnFragment : Fragment() {
             return
         }
         currentItem = vocabList[currentIndex]
-        val item = currentItem!!
+        val item = currentItem ?: return
 
         binding.groupCard.visibility = View.VISIBLE
         binding.groupEmpty.visibility = View.GONE
