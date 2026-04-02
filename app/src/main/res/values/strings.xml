@@ -10,8 +10,8 @@
     <string name="button_show">Show Answer</string>
     <string name="button_right">✓ Right</string>
     <string name="button_wrong">✗ Wrong</string>
-    <string name="button_next">Next →</string>
     <string name="button_restart">Start Over</string>
+    <string name="cd_tap_to_replay">Tap to replay audio</string>
     <string name="label_example_sentence">Example Sentence</string>
     <string name="finished_title">🎉 All done!</string>
     <string name="finished_message">You have reviewed all the words in this session.</string>

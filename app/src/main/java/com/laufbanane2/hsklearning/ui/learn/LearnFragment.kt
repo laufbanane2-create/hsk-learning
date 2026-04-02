@@ -42,9 +42,9 @@ class LearnFragment : Fragment() {
         initTts()
 
         binding.buttonShow.setOnClickListener { revealAnswer() }
+        binding.textChinese.setOnClickListener { currentItem?.let { speakSentence(it.sentence) } }
         binding.buttonRight.setOnClickListener { handleAnswer(correct = true) }
         binding.buttonWrong.setOnClickListener { handleAnswer(correct = false) }
-        binding.buttonNext.setOnClickListener { showNextWord() }
         binding.buttonRestart.setOnClickListener { loadVocab() }
     }
 
@@ -111,6 +111,7 @@ class LearnFragment : Fragment() {
         binding.textProgress.text = "${currentIndex + 1} / ${vocabList.size}"
         binding.textLevelBadge.text = "HSK ${item.level}"
         binding.textChinese.text = item.chinese
+        binding.textChinese.isClickable = true
         binding.buttonShow.visibility = View.VISIBLE
         binding.buttonShow.isEnabled = true
 
@@ -149,12 +150,6 @@ class LearnFragment : Fragment() {
         val w = statsManager.getWrong(item.id)
         binding.textStats.text = "✓ $c   ✗ $w"
 
-        binding.groupActions.visibility = View.GONE
-        binding.buttonNext.visibility = View.VISIBLE
-    }
-
-    private fun showNextWord() {
-        binding.buttonNext.visibility = View.GONE
         currentIndex++
         showCurrentWord()
     }
