@@ -111,7 +111,6 @@ class LearnFragment : Fragment() {
         binding.textProgress.text = "${currentIndex + 1} / ${vocabList.size}"
         binding.textLevelBadge.text = "HSK ${item.level}"
         binding.textChinese.text = item.chinese
-        binding.textChinese.isClickable = true
         binding.buttonShow.visibility = View.VISIBLE
         binding.buttonShow.isEnabled = true
 
