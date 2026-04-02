@@ -20,7 +20,7 @@ if not API_KEY:
     sys.exit(1)
 
 VOICE_ID = os.environ.get("ELEVENLABS_VOICE_ID", "21m00Tcm4TlvDq8ikWAM")  # Rachel (multilingual)
-MODEL_ID = "eleven_multilingual_v2"
+MODEL_ID = "eleven_turbo_v2_5"  # Supports 32 languages (incl. Chinese); available from Starter plan
 OUTPUT_DIR = os.path.join("app", "src", "main", "res", "raw")
 VOCAB_FILE = os.path.join(
     "app", "src", "main", "java", "com", "laufbanane2", "hsklearning", "data", "VocabData.kt"
@@ -82,7 +82,12 @@ for item_id, sentence in items:
         # Small delay to avoid hitting rate limits
         time.sleep(0.5)
     except requests.HTTPError as exc:
-        print(f"  ERROR generating {item_id}: {exc}", file=sys.stderr)
+        body = ""
+        try:
+            body = exc.response.text
+        except Exception:
+            pass
+        print(f"  ERROR generating {item_id}: {exc} | response: {body}", file=sys.stderr)
         errors += 1
     except requests.RequestException as exc:
         print(f"  ERROR generating {item_id}: {exc}", file=sys.stderr)

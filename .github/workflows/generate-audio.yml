@@ -5,6 +5,8 @@ name: Generate Audio Assets
 #   - Automatically when VocabData.kt is changed (new/modified sentences)
 on:
   workflow_dispatch:
+  pull_request:
+    branches: ["main"]
   push:
     branches: ["main"]
     paths:
