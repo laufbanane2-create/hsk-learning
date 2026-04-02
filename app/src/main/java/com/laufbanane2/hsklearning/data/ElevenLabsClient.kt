@@ -12,8 +12,6 @@ import java.io.IOException
 
 class ElevenLabsClient(private val apiKey: String) {
 
-    private val client = OkHttpClient()
-
     // Adam voice — supports eleven_multilingual_v2 (Chinese included)
     private val voiceId = "pNInz6obpgDQGcFmaJgB"
 
@@ -36,7 +34,7 @@ class ElevenLabsClient(private val apiKey: String) {
             .post(bodyJson.toRequestBody("application/json".toMediaType()))
             .build()
 
-        client.newCall(request).enqueue(object : Callback {
+        sharedClient.newCall(request).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) { onError() }
             override fun onResponse(call: Call, response: Response) {
                 response.use {
@@ -59,7 +57,7 @@ class ElevenLabsClient(private val apiKey: String) {
             .get()
             .build()
 
-        client.newCall(request).enqueue(object : Callback {
+        sharedClient.newCall(request).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) { onError() }
             override fun onResponse(call: Call, response: Response) {
                 response.use {
@@ -78,5 +76,10 @@ class ElevenLabsClient(private val apiKey: String) {
                 }
             }
         })
+    }
+
+    companion object {
+        // Single shared OkHttpClient for connection pooling across all requests.
+        private val sharedClient = OkHttpClient()
     }
 }

@@ -15,6 +15,9 @@ class SettingsFragment : Fragment() {
     private var _binding: FragmentSettingsBinding? = null
     private val binding get() = _binding!!
 
+    private var elevenLabsClient: ElevenLabsClient? = null
+    private var cachedApiKey: String = ""
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -75,7 +78,13 @@ class SettingsFragment : Fragment() {
             return
         }
 
-        ElevenLabsClient(apiKey).checkQuota(
+        // Reuse the client for the same key; recreate only when the key changes.
+        if (elevenLabsClient == null || apiKey != cachedApiKey) {
+            elevenLabsClient = ElevenLabsClient(apiKey)
+            cachedApiKey = apiKey
+        }
+
+        elevenLabsClient!!.checkQuota(
             onResult = { used, limit ->
                 activity?.runOnUiThread {
                     _binding?.textQuota?.apply {

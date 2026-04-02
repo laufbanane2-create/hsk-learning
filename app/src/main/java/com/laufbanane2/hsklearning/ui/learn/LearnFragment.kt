@@ -25,6 +25,8 @@ class LearnFragment : Fragment() {
     private var tts: TextToSpeech? = null
     private var ttsReady = false
     private var mediaPlayer: MediaPlayer? = null
+    private var elevenLabsClient: ElevenLabsClient? = null
+    private var cachedApiKey: String = ""
 
     // Monotonically increasing ID for the "current" audio request.
     // Any callback that arrives with a stale ID is discarded, preventing
@@ -114,7 +116,11 @@ class LearnFragment : Fragment() {
             .getString("elevenlabs_api_key", "") ?: ""
 
         if (apiKey.isNotBlank()) {
-            ElevenLabsClient(apiKey).generateSpeech(
+            if (elevenLabsClient == null || apiKey != cachedApiKey) {
+                elevenLabsClient = ElevenLabsClient(apiKey)
+                cachedApiKey = apiKey
+            }
+            elevenLabsClient!!.generateSpeech(
                 text = sentence,
                 onAudioBytes = { bytes ->
                     // Discard if the user has already moved to the next word.
@@ -141,17 +147,25 @@ class LearnFragment : Fragment() {
     }
 
     private fun playAudioBytes(bytes: ByteArray) {
-        val tempFile = File(requireContext().cacheDir, "elevenlabs_audio.mp3")
+        // Use a unique filename per request to prevent overwriting a file that is
+        // still being played back by a concurrent (now-stale) MediaPlayer.
+        val tempFile = File(requireContext().cacheDir, "elevenlabs_${System.currentTimeMillis()}.mp3")
         tempFile.writeBytes(bytes)
         activity?.runOnUiThread {
             stopCurrentAudio()
             try {
                 mediaPlayer = MediaPlayer().apply {
                     setDataSource(tempFile.absolutePath)
+                    setOnCompletionListener {
+                        it.release()
+                        tempFile.delete()
+                        if (mediaPlayer == it) mediaPlayer = null
+                    }
                     prepare()
                     start()
                 }
             } catch (e: Exception) {
+                tempFile.delete()
                 // If playback fails, fall back to TTS for the current item.
                 currentItem?.let { speakWithTts(it.sentence) }
             }
