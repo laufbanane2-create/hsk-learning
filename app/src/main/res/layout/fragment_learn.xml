@@ -1,0 +1,249 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <!-- Card group: shown while practicing -->
+        <LinearLayout
+            android:id="@+id/groupCard"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <!-- Progress & level badge -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:id="@+id/textProgress"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:textSize="14sp"
+                    android:textColor="?android:attr/textColorSecondary" />
+
+                <TextView
+                    android:id="@+id/textLevelBadge"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@color/hsk_badge"
+                    android:textColor="@android:color/white"
+                    android:paddingStart="8dp"
+                    android:paddingEnd="8dp"
+                    android:paddingTop="4dp"
+                    android:paddingBottom="4dp"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+            <!-- Stats below progress -->
+            <TextView
+                android:id="@+id/textStats"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:textSize="13sp"
+                android:textColor="?android:attr/textColorSecondary"
+                android:gravity="end" />
+
+            <!-- Chinese character (large) -->
+            <TextView
+                android:id="@+id/textChinese"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="48dp"
+                android:layout_marginBottom="8dp"
+                android:gravity="center"
+                android:textSize="96sp"
+                android:textStyle="bold"
+                android:textColor="?android:attr/textColorPrimary" />
+
+            <!-- Show button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/buttonShow"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="32dp"
+                android:text="@string/button_show" />
+
+            <!-- Answer group: hidden until Show is pressed -->
+            <LinearLayout
+                android:id="@+id/groupAnswer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginTop="24dp"
+                android:visibility="gone">
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="?android:attr/listDivider"
+                    android:layout_marginBottom="16dp" />
+
+                <!-- Pinyin -->
+                <TextView
+                    android:id="@+id/textPinyin"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:textSize="22sp"
+                    android:textColor="?android:attr/textColorSecondary"
+                    android:layout_marginBottom="4dp" />
+
+                <!-- English translation of word -->
+                <TextView
+                    android:id="@+id/textEnglish"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:textSize="28sp"
+                    android:textStyle="bold"
+                    android:textColor="?android:attr/textColorPrimary"
+                    android:layout_marginBottom="24dp" />
+
+                <!-- Sentence section -->
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/label_example_sentence"
+                    android:textSize="12sp"
+                    android:textAllCaps="true"
+                    android:textColor="?android:attr/textColorSecondary"
+                    android:layout_marginBottom="4dp" />
+
+                <TextView
+                    android:id="@+id/textSentenceChinese"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textSize="22sp"
+                    android:textColor="?android:attr/textColorPrimary"
+                    android:layout_marginBottom="4dp" />
+
+                <TextView
+                    android:id="@+id/textSentencePinyin"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textSize="14sp"
+                    android:textColor="?android:attr/textColorSecondary"
+                    android:layout_marginBottom="4dp" />
+
+                <TextView
+                    android:id="@+id/textSentenceEnglish"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textSize="15sp"
+                    android:fontFamily="sans-serif-light"
+                    android:textColor="?android:attr/textColorPrimary"
+                    android:layout_marginBottom="8dp" />
+            </LinearLayout>
+
+            <!-- Right / Wrong buttons -->
+            <LinearLayout
+                android:id="@+id/groupActions"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="16dp"
+                android:gravity="center"
+                android:visibility="gone">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/buttonWrong"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="8dp"
+                    android:text="@string/button_wrong"
+                    android:backgroundTint="@color/wrong_button" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/buttonRight"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="8dp"
+                    android:text="@string/button_right"
+                    android:backgroundTint="@color/right_button" />
+
+            </LinearLayout>
+
+            <!-- Next button (shown after answering right/wrong) -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/buttonNext"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="@string/button_next"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:visibility="gone" />
+
+        </LinearLayout>
+
+        <!-- Finished screen -->
+        <LinearLayout
+            android:id="@+id/groupFinished"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:paddingTop="80dp"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/finished_title"
+                android:textSize="28sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="12dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/finished_message"
+                android:textSize="16sp"
+                android:gravity="center"
+                android:layout_marginBottom="32dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/buttonRestart"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/button_restart" />
+
+        </LinearLayout>
+
+        <!-- Empty state (no level selected) -->
+        <LinearLayout
+            android:id="@+id/groupEmpty"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:paddingTop="80dp"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/empty_state_message"
+                android:textSize="16sp"
+                android:gravity="center"
+                android:padding="32dp" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+</ScrollView>
