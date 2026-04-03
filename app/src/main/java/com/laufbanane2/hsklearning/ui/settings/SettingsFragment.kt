@@ -84,7 +84,7 @@ class SettingsFragment : Fragment() {
             cachedApiKey = apiKey
         }
 
-        elevenLabsClient!!.checkQuota(
+        elevenLabsClient?.checkQuota(
             onResult = { used, limit ->
                 activity?.runOnUiThread {
                     _binding?.textQuota?.apply {

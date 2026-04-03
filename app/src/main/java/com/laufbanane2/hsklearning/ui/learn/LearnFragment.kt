@@ -57,6 +57,7 @@ class LearnFragment : Fragment() {
         statsManager = StatsManager(requireContext())
 
         initTts()
+        cleanStaleTempFiles()
 
         binding.buttonShow.setOnClickListener { revealAnswer() }
         binding.textChinese.setOnClickListener { currentItem?.let { speakSentence(it.sentence) } }
@@ -80,8 +81,12 @@ class LearnFragment : Fragment() {
         }
     }
 
-    private fun initTts() {
-        tts = TextToSpeech(requireContext()) { status ->
+    private fun cleanStaleTempFiles() {
+        requireContext().cacheDir.listFiles { f -> f.name.startsWith("elevenlabs_") && f.name.endsWith(".mp3") }
+            ?.forEach { it.delete() }
+    }
+
+    private fun initTts() {        tts = TextToSpeech(requireContext()) { status ->
             if (status == TextToSpeech.SUCCESS) {
                 val result = tts?.setLanguage(Locale.SIMPLIFIED_CHINESE)
                 ttsReady = result != TextToSpeech.LANG_MISSING_DATA &&
