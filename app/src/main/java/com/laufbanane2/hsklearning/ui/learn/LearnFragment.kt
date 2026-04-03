@@ -42,7 +42,9 @@ class LearnFragment : Fragment() {
     private var vocabLoaded = false
 
     // Loaded Chinese typefaces; populated asynchronously at startup.
-    // Any successfully downloaded font is added here and used for random selection.
+    // All mutations happen on the main-thread Handler passed to FontsContractCompat,
+    // and all reads happen in showCurrentWord() on the main thread, so no
+    // synchronisation is needed.
     private val chineseTypefaces = mutableListOf<Typeface>()
 
     override fun onCreateView(
@@ -89,6 +91,8 @@ class LearnFragment : Fragment() {
     }
 
     private fun setupMuteButton() {
+        // updateMuteIcon() runs here, before the first frame, so the icon
+        // always reflects the persisted state even if the user previously muted.
         updateMuteIcon()
         binding.buttonMute.setOnClickListener {
             val prefs = requireContext().getSharedPreferences("settings", Context.MODE_PRIVATE)
