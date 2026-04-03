@@ -47,6 +47,15 @@
                     android:paddingBottom="4dp"
                     android:textIsSelectable="true"
                     android:textSize="12sp" />
+
+                <ImageButton
+                    android:id="@+id/buttonMute"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_marginStart="8dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:src="@drawable/ic_volume_up"
+                    android:contentDescription="@string/cd_mute_on" />
             </LinearLayout>
 
             <!-- Stats below progress -->
