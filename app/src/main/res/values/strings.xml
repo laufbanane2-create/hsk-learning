@@ -16,6 +16,11 @@
     <string name="finished_title">🎉 All done!</string>
     <string name="finished_message">You have reviewed all the words in this session.</string>
     <string name="empty_state_message">No vocabulary selected. Please go to Settings and enable at least one HSK level.</string>
+    <string name="no_due_title">🎉 All caught up!</string>
+    <string name="no_due_message_future">Next card due %s.</string>
+    <string name="no_due_message_now">Cards are now due – tap below to start!</string>
+    <string name="button_study_all">Review all cards anyway</string>
+    <string name="label_interval">Interval: %s</string>
 
     <!-- Settings screen -->
     <string name="settings_title">Settings</string>
