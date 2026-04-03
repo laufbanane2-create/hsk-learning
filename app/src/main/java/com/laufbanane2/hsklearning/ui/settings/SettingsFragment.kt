@@ -60,12 +60,11 @@ class SettingsFragment : Fragment() {
                 setPadding(paddingLeft, paddingTop, paddingRight, bottom)
 
                 setOnClickListener {
-                    // Enforce at least one font enabled.
-                    val anyEnabled = ChineseFonts.ALL.any { f ->
-                        val cb = binding.groupFontCheckboxes.findViewWithTag<CheckBox>(f.key)
-                        cb?.isChecked ?: ChineseFonts.isEnabled(prefs, f)
+                    // Count checkboxes that are currently checked (after this click).
+                    val enabledCount = ChineseFonts.ALL.count { f ->
+                        binding.groupFontCheckboxes.findViewWithTag<CheckBox>(f.key)?.isChecked == true
                     }
-                    if (!anyEnabled) {
+                    if (enabledCount == 0) {
                         Toast.makeText(
                             requireContext(),
                             getString(R.string.toast_font_min_one),
