@@ -104,7 +104,7 @@ class SettingsFragment : Fragment() {
                     LinearLayout.LayoutParams.WRAP_CONTENT,
                     1f
                 ).also { it.marginStart = (8 * density).toInt() }
-                // Tapping the label toggles the checkbox AND shows the preview.
+                // Tapping the label shows the font preview dialog.
                 setOnClickListener {
                     showFontPreview(font)
                 }
