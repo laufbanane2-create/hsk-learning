@@ -103,8 +103,10 @@ class SrsManager(context: Context) {
         val hours = minutes / 60
         val days = hours / 24
         return when {
-            days > 0 -> "${days}d ${hours % 24}h"
-            hours > 0 -> "${hours}h ${minutes % 60}m"
+            days > 0 && hours % 24 > 0 -> "${days}d ${hours % 24}h"
+            days > 0 -> "${days}d"
+            hours > 0 && minutes % 60 > 0 -> "${hours}h ${minutes % 60}m"
+            hours > 0 -> "${hours}h"
             minutes > 0 -> "${minutes}m"
             else -> "<1m"
         }
