@@ -26,6 +26,9 @@
     <string name="hsk2_label">HSK 2 (35 elementary words)</string>
     <string name="settings_note">Tap Learn to start a new session with the updated selection.</string>
     <string name="settings_fonts_title">Character fonts</string>
-    <string name="settings_fonts_subtitle">Select which fonts are used to display HSK characters. At least one must be enabled.</string>
+    <string name="settings_fonts_subtitle">Select which fonts are used to display HSK characters. Tap a font name to preview it. At least one must be enabled.</string>
     <string name="toast_font_min_one">Please keep at least one font enabled.</string>
+    <string name="font_preview_title">Font preview</string>
+    <string name="font_preview_sample">我在学习汉语。</string>
+    <string name="font_preview_loading">Loading font…</string>
 </resources>
