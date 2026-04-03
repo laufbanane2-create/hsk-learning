@@ -32,6 +32,7 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:textSize="14sp"
+                    android:textIsSelectable="true"
                     android:textColor="?android:attr/textColorSecondary" />
 
                 <TextView
@@ -44,6 +45,7 @@
                     android:paddingEnd="8dp"
                     android:paddingTop="4dp"
                     android:paddingBottom="4dp"
+                    android:textIsSelectable="true"
                     android:textSize="12sp" />
             </LinearLayout>
 
@@ -54,6 +56,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
                 android:textSize="13sp"
+                android:textIsSelectable="true"
                 android:textColor="?android:attr/textColorSecondary"
                 android:gravity="end" />
 
@@ -102,6 +105,7 @@
                     android:layout_height="wrap_content"
                     android:gravity="center"
                     android:textSize="22sp"
+                    android:textIsSelectable="true"
                     android:textColor="?android:attr/textColorSecondary"
                     android:layout_marginBottom="4dp" />
 
@@ -113,6 +117,7 @@
                     android:gravity="center"
                     android:textSize="28sp"
                     android:textStyle="bold"
+                    android:textIsSelectable="true"
                     android:textColor="?android:attr/textColorPrimary"
                     android:layout_marginBottom="24dp" />
 
@@ -131,6 +136,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:textSize="22sp"
+                    android:textIsSelectable="true"
                     android:textColor="?android:attr/textColorPrimary"
                     android:layout_marginBottom="4dp" />
 
@@ -139,6 +145,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:textSize="14sp"
+                    android:textIsSelectable="true"
                     android:textColor="?android:attr/textColorSecondary"
                     android:layout_marginBottom="4dp" />
 
@@ -148,6 +155,7 @@
                     android:layout_height="wrap_content"
                     android:textSize="15sp"
                     android:fontFamily="sans-serif-light"
+                    android:textIsSelectable="true"
                     android:textColor="?android:attr/textColorPrimary"
                     android:layout_marginBottom="8dp" />
             </LinearLayout>
@@ -200,6 +208,7 @@
                 android:text="@string/finished_title"
                 android:textSize="28sp"
                 android:textStyle="bold"
+                android:textIsSelectable="true"
                 android:layout_marginBottom="12dp" />
 
             <TextView
@@ -208,6 +217,7 @@
                 android:text="@string/finished_message"
                 android:textSize="16sp"
                 android:gravity="center"
+                android:textIsSelectable="true"
                 android:layout_marginBottom="32dp" />
 
             <com.google.android.material.button.MaterialButton
@@ -234,6 +244,7 @@
                 android:text="@string/empty_state_message"
                 android:textSize="16sp"
                 android:gravity="center"
+                android:textIsSelectable="true"
                 android:padding="32dp" />
 
         </LinearLayout>

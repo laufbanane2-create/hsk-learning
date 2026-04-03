@@ -3,7 +3,7 @@
 Build-time audio generation script for HSK Learning.
 
 Generates MP3 files for every vocabulary sentence using the ElevenLabs API
-(model: eleven_multilingual_v2, voice: Adam) and writes them to
+(model: eleven_v3, voice: Bella) and writes them to
 app/src/main/res/raw/ so they are bundled with the APK.
 
 Usage:
@@ -102,8 +102,8 @@ VOCAB = [
     ("hsk2_zuotian",   "昨天我见了一个老朋友。"),
 ]
 
-VOICE_ID = "pNInz6obpgDQGcFmaJgB"  # Adam
-MODEL_ID = "eleven_multilingual_v2"
+VOICE_ID = "EXAVITQu4vr4xnSDxMaL"  # Bella
+MODEL_ID = "eleven_v3"
 API_URL = f"https://api.elevenlabs.io/v1/text-to-speech/{VOICE_ID}"
 
 # Seconds to wait between requests to respect rate limits.

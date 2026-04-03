@@ -8,12 +8,10 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
-import com.laufbanane2.hsklearning.data.ElevenLabsClient
 import com.laufbanane2.hsklearning.data.StatsManager
 import com.laufbanane2.hsklearning.data.VocabData
 import com.laufbanane2.hsklearning.data.VocabItem
 import com.laufbanane2.hsklearning.databinding.FragmentLearnBinding
-import java.io.File
 import java.util.Locale
 
 class LearnFragment : Fragment() {
@@ -25,13 +23,6 @@ class LearnFragment : Fragment() {
     private var tts: TextToSpeech? = null
     private var ttsReady = false
     private var mediaPlayer: MediaPlayer? = null
-    private var elevenLabsClient: ElevenLabsClient? = null
-    private var cachedApiKey: String = ""
-
-    // Monotonically increasing ID for the "current" audio request.
-    // Any callback that arrives with a stale ID is discarded, preventing
-    // ElevenLabs and the TTS fallback from playing simultaneously.
-    private var currentUtteranceId = 0
 
     private var vocabList: List<VocabItem> = emptyList()
     private var currentIndex = 0
@@ -57,7 +48,6 @@ class LearnFragment : Fragment() {
         statsManager = StatsManager(requireContext())
 
         initTts()
-        cleanStaleTempFiles()
 
         binding.buttonShow.setOnClickListener { revealAnswer() }
         binding.textChinese.setOnClickListener { currentItem?.let { speakSentence(it.sentence) } }
@@ -81,12 +71,7 @@ class LearnFragment : Fragment() {
         }
     }
 
-    private fun cleanStaleTempFiles() {
-        requireContext().cacheDir.listFiles { f -> f.name.startsWith("elevenlabs_") && f.name.endsWith(".mp3") }
-            ?.forEach { it.delete() }
-    }
-
-    private fun initTts() {        tts = TextToSpeech(requireContext()) { status ->
+    private fun initTts() {
             if (status == TextToSpeech.SUCCESS) {
                 val result = tts?.setLanguage(Locale.SIMPLIFIED_CHINESE)
                 ttsReady = result != TextToSpeech.LANG_MISSING_DATA &&
@@ -96,7 +81,7 @@ class LearnFragment : Fragment() {
         }
     }
 
-    // Stop whatever audio is currently active (ElevenLabs MediaPlayer or TTS).
+    // Stop whatever audio is currently active.
     private fun stopCurrentAudio() {
         tts?.stop()
         mediaPlayer?.apply {
@@ -107,16 +92,12 @@ class LearnFragment : Fragment() {
     }
 
     // Entry point for all audio playback.
-    // Increments the utterance ID so that any in-flight callbacks for the
-    // previous word are silently discarded when they arrive.
     //
     // Priority:
     //  1. Bundled raw resource MP3 (pre-generated at build time via
     //     `./gradlew generateAudio`) — zero network, zero API key required.
-    //  2. Runtime ElevenLabs API call (requires API key in settings).
-    //  3. Android device TextToSpeech fallback.
+    //  2. Android device TextToSpeech fallback.
     private fun speakSentence(sentence: String) {
-        val utteranceId = ++currentUtteranceId
         stopCurrentAudio()
 
         // 1. Try the bundled pre-generated MP3 for this vocabulary item.
@@ -129,35 +110,8 @@ class LearnFragment : Fragment() {
             }
         }
 
-        // 2. Fall back to runtime ElevenLabs when no bundled file exists.
-        val apiKey = requireContext()
-            .getSharedPreferences("settings", Context.MODE_PRIVATE)
-            .getString("elevenlabs_api_key", "") ?: ""
-
-        if (apiKey.isNotBlank()) {
-            if (elevenLabsClient == null || apiKey != cachedApiKey) {
-                elevenLabsClient = ElevenLabsClient(apiKey)
-                cachedApiKey = apiKey
-            }
-            elevenLabsClient!!.generateSpeech(
-                text = sentence,
-                onAudioBytes = { bytes ->
-                    // Discard if the user has already moved to the next word.
-                    if (utteranceId == currentUtteranceId) {
-                        playAudioBytes(bytes)
-                    }
-                },
-                onError = {
-                    // ElevenLabs failed – fall back to device TTS.
-                    if (utteranceId == currentUtteranceId) {
-                        speakWithTts(sentence)
-                    }
-                }
-            )
-        } else {
-            // 3. Device TTS as last resort.
-            speakWithTts(sentence)
-        }
+        // 2. Device TTS as fallback.
+        speakWithTts(sentence)
     }
 
     private fun playRawResource(resId: Int) {
@@ -182,32 +136,6 @@ class LearnFragment : Fragment() {
     private fun speakWithTts(sentence: String) {
         if (ttsReady) {
             tts?.speak(sentence, TextToSpeech.QUEUE_FLUSH, null, "sentence_${System.currentTimeMillis()}")
-        }
-    }
-
-    private fun playAudioBytes(bytes: ByteArray) {
-        // Use a unique filename per request to prevent overwriting a file that is
-        // still being played back by a concurrent (now-stale) MediaPlayer.
-        val tempFile = File(requireContext().cacheDir, "elevenlabs_${System.currentTimeMillis()}.mp3")
-        tempFile.writeBytes(bytes)
-        activity?.runOnUiThread {
-            stopCurrentAudio()
-            try {
-                mediaPlayer = MediaPlayer().apply {
-                    setDataSource(tempFile.absolutePath)
-                    setOnCompletionListener {
-                        it.release()
-                        tempFile.delete()
-                        if (mediaPlayer == it) mediaPlayer = null
-                    }
-                    prepare()
-                    start()
-                }
-            } catch (e: Exception) {
-                tempFile.delete()
-                // If playback fails, fall back to TTS for the current item.
-                currentItem?.let { speakWithTts(it.sentence) }
-            }
         }
     }
 
