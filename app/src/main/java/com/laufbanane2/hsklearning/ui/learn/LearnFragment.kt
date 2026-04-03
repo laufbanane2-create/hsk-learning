@@ -1,14 +1,20 @@
 package com.laufbanane2.hsklearning.ui.learn
 
 import android.content.Context
+import android.graphics.Typeface
 import android.media.MediaPlayer
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.speech.tts.TextToSpeech
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.provider.FontRequest
+import androidx.core.provider.FontsContractCompat
 import androidx.fragment.app.Fragment
 import com.laufbanane2.hsklearning.R
+import com.laufbanane2.hsklearning.data.ChineseFonts
 import com.laufbanane2.hsklearning.data.SrsManager
 import com.laufbanane2.hsklearning.data.StatsManager
 import com.laufbanane2.hsklearning.data.VocabData
@@ -38,6 +44,12 @@ class LearnFragment : Fragment() {
     private var loadedHsk2 = false
     private var vocabLoaded = false
 
+    // Loaded Chinese typefaces; populated asynchronously at startup.
+    // All mutations happen on the main-thread Handler passed to FontsContractCompat,
+    // and all reads happen in showCurrentWord() on the main thread, so no
+    // synchronisation is needed.
+    private val chineseTypefaces = mutableListOf<Typeface>()
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -52,6 +64,8 @@ class LearnFragment : Fragment() {
         srsManager = SrsManager(requireContext())
 
         initTts()
+        loadChineseFonts()
+        setupMuteButton()
 
         binding.buttonShow.setOnClickListener { revealAnswer() }
         binding.textChinese.setOnClickListener { currentItem?.let { speakSentence(it.sentence) } }
@@ -74,6 +88,69 @@ class LearnFragment : Fragment() {
         if (!vocabLoaded || hsk1 != loadedHsk1 || hsk2 != loadedHsk2) {
             loadVocab()
         }
+        // Always reload fonts on resume so changes made in Settings are picked up.
+        loadChineseFonts()
+    }
+
+    private fun isMuted(): Boolean {
+        val prefs = requireContext().getSharedPreferences("settings", Context.MODE_PRIVATE)
+        return prefs.getBoolean("muted", false)
+    }
+
+    private fun setupMuteButton() {
+        // updateMuteIcon() runs here, before the first frame, so the icon
+        // always reflects the persisted state even if the user previously muted.
+        updateMuteIcon()
+        binding.buttonMute.setOnClickListener {
+            val prefs = requireContext().getSharedPreferences("settings", Context.MODE_PRIVATE)
+            val nowMuted = !prefs.getBoolean("muted", false)
+            prefs.edit().putBoolean("muted", nowMuted).apply()
+            updateMuteIcon()
+            if (nowMuted) stopCurrentAudio()
+        }
+    }
+
+    private fun updateMuteIcon() {
+        val muted = isMuted()
+        binding.buttonMute.setImageResource(
+            if (muted) R.drawable.ic_volume_off else R.drawable.ic_volume_up
+        )
+        binding.buttonMute.contentDescription = getString(
+            if (muted) R.string.cd_mute_off else R.string.cd_mute_on
+        )
+    }
+
+    // Request the Chinese fonts from the Google Fonts provider asynchronously.
+    // Only fonts enabled in settings are requested.
+    // Each font that loads successfully is added to chineseTypefaces and will
+    // be picked up the next time a new word is shown.
+    private fun loadChineseFonts() {
+        chineseTypefaces.clear()
+        val prefs = requireContext().getSharedPreferences("settings", Context.MODE_PRIVATE)
+        val handler = Handler(Looper.getMainLooper())
+        ChineseFonts.ALL
+            .filter { ChineseFonts.isEnabled(prefs, it) }
+            .forEach { font ->
+                val request = FontRequest(
+                    "com.google.android.gms.fonts",
+                    "com.google.android.gms",
+                    font.googleQuery,
+                    R.array.com_google_android_gms_fonts_certs
+                )
+                FontsContractCompat.requestFont(
+                    requireContext(),
+                    request,
+                    object : FontsContractCompat.FontRequestCallback() {
+                        override fun onTypefaceRetrieved(typeface: Typeface) {
+                            chineseTypefaces.add(typeface)
+                        }
+                        override fun onTypefaceRequestFailed(reason: Int) {
+                            // Font unavailable (no network / no Play Services) — skip it.
+                        }
+                    },
+                    handler
+                )
+            }
     }
 
     private fun initTts() {
@@ -104,6 +181,7 @@ class LearnFragment : Fragment() {
     //     `./gradlew generateAudio`) — zero network, zero API key required.
     //  2. Android device TextToSpeech fallback.
     private fun speakSentence(sentence: String) {
+        if (isMuted()) return
         stopCurrentAudio()
 
         // 1. Try the bundled pre-generated MP3 for this vocabulary item.
@@ -218,6 +296,9 @@ class LearnFragment : Fragment() {
         binding.textProgress.text = "${currentIndex + 1} / ${vocabList.size}"
         binding.textLevelBadge.text = "HSK ${item.level}"
         binding.textChinese.text = item.chinese
+        if (chineseTypefaces.isNotEmpty()) {
+            binding.textChinese.typeface = chineseTypefaces.random()
+        }
         binding.buttonShow.visibility = View.VISIBLE
         binding.buttonShow.isEnabled = true
 

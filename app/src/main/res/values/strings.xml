@@ -12,6 +12,8 @@
     <string name="button_wrong">✗ Wrong</string>
     <string name="button_restart">Start Over</string>
     <string name="cd_tap_to_replay">Tap to replay audio</string>
+    <string name="cd_mute_on">Mute audio</string>
+    <string name="cd_mute_off">Unmute audio</string>
     <string name="label_example_sentence">Example Sentence</string>
     <string name="finished_title">🎉 All done!</string>
     <string name="finished_message">You have reviewed all the words in this session.</string>
@@ -28,4 +30,10 @@
     <string name="hsk1_label">HSK 1 (35 basic words)</string>
     <string name="hsk2_label">HSK 2 (35 elementary words)</string>
     <string name="settings_note">Tap Learn to start a new session with the updated selection.</string>
+    <string name="settings_fonts_title">Character fonts</string>
+    <string name="settings_fonts_subtitle">Select which fonts are used to display HSK characters. Tap a font name to preview it. At least one must be enabled.</string>
+    <string name="toast_font_min_one">Please keep at least one font enabled.</string>
+    <string name="font_preview_title">Font preview</string>
+    <string name="font_preview_sample">我在学习汉语。</string>
+    <string name="font_preview_loading">Loading font…</string>
 </resources>
