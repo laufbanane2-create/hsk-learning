@@ -23,4 +23,10 @@
     <string name="hsk1_label">HSK 1 (35 basic words)</string>
     <string name="hsk2_label">HSK 2 (35 elementary words)</string>
     <string name="settings_note">Tap Learn to start a new session with the updated selection.</string>
+
+    <!-- ElevenLabs section -->
+    <string name="elevenlabs_section_title">ElevenLabs Audio</string>
+    <string name="elevenlabs_api_key_hint_description">Enter your ElevenLabs API key to enable high-quality AI-generated audio. Leave blank to use device text-to-speech.</string>
+    <string name="elevenlabs_api_key_hint">API key</string>
+    <string name="elevenlabs_save_key">Save key</string>
 </resources>

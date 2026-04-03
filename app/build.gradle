@@ -38,11 +38,49 @@ android {
     }
 }
 
+// ---------------------------------------------------------------------------
+// Build-time audio generation
+// ---------------------------------------------------------------------------
+// Run `./gradlew generateAudio -PelevenLabsApiKey=<KEY>` to pre-generate all
+// vocabulary sentence MP3s using ElevenLabs (eleven_multilingual_v2 / Adam).
+// The files are written to app/src/main/res/raw/ and bundled with the APK so
+// the app can play them without any network call or API key at runtime.
+//
+// Prerequisites: Python 3 must be installed and available as `python3`.
+//   On macOS/Linux: usually pre-installed or via `brew install python`.
+//   On Windows: install from python.org and ensure `python3` is on PATH,
+//   or override with: ./gradlew generateAudio -PpythonExecutable=python
+//
+// The task is intentionally NOT wired into assembleDebug/assembleRelease so
+// that normal builds stay fast and offline-friendly.  Re-run it whenever the
+// vocabulary changes or you want to refresh the audio.
+tasks.register('generateAudio', Exec) {
+    group = 'audio'
+    description = 'Generate ElevenLabs MP3 assets for all HSK vocabulary sentences.'
+
+    def apiKey = project.findProperty('elevenLabsApiKey') ?: System.getenv('ELEVENLABS_API_KEY') ?: ''
+    def python = project.findProperty('pythonExecutable') ?: 'python3'
+    if (apiKey.isEmpty()) {
+        doFirst {
+            throw new GradleException(
+                'ElevenLabs API key is required.\n' +
+                'Pass it with: ./gradlew generateAudio -PelevenLabsApiKey=<KEY>\n' +
+                'Or set the ELEVENLABS_API_KEY environment variable.'
+            )
+        }
+    }
+
+    commandLine python,
+        "${rootProject.projectDir}/scripts/generate_audio.py",
+        '--api-key', apiKey
+}
+
 dependencies {
     implementation 'androidx.core:core-ktx:1.12.0'
     implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'com.google.android.material:material:1.11.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    implementation 'com.squareup.okhttp3:okhttp:4.12.0'
 
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
