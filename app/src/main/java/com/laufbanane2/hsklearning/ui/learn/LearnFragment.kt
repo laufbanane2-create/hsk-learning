@@ -14,6 +14,7 @@ import androidx.core.provider.FontRequest
 import androidx.core.provider.FontsContractCompat
 import androidx.fragment.app.Fragment
 import com.laufbanane2.hsklearning.R
+import com.laufbanane2.hsklearning.data.ChineseFonts
 import com.laufbanane2.hsklearning.data.StatsManager
 import com.laufbanane2.hsklearning.data.VocabData
 import com.laufbanane2.hsklearning.data.VocabItem
@@ -83,6 +84,8 @@ class LearnFragment : Fragment() {
         if (!vocabLoaded || hsk1 != loadedHsk1 || hsk2 != loadedHsk2) {
             loadVocab()
         }
+        // Always reload fonts on resume so changes made in Settings are picked up.
+        loadChineseFonts()
     }
 
     private fun isMuted(): Boolean {
@@ -114,38 +117,36 @@ class LearnFragment : Fragment() {
     }
 
     // Request the Chinese fonts from the Google Fonts provider asynchronously.
+    // Only fonts enabled in settings are requested.
     // Each font that loads successfully is added to chineseTypefaces and will
     // be picked up the next time a new word is shown.
     private fun loadChineseFonts() {
-        val fontQueries = listOf(
-            "Noto Serif SC",
-            "ZCOOL XiaoWei",
-            "Ma Shan Zheng",
-            "Liu Jian Mao Cao",
-            "ZCOOL QingKe HuangYou"
-        )
+        chineseTypefaces.clear()
+        val prefs = requireContext().getSharedPreferences("settings", Context.MODE_PRIVATE)
         val handler = Handler(Looper.getMainLooper())
-        fontQueries.forEach { query ->
-            val request = FontRequest(
-                "com.google.android.gms.fonts",
-                "com.google.android.gms",
-                query,
-                R.array.com_google_android_gms_fonts_certs
-            )
-            FontsContractCompat.requestFont(
-                requireContext(),
-                request,
-                object : FontsContractCompat.FontRequestCallback() {
-                    override fun onTypefaceRetrieved(typeface: Typeface) {
-                        chineseTypefaces.add(typeface)
-                    }
-                    override fun onTypefaceRequestFailed(reason: Int) {
-                        // Font unavailable (no network / no Play Services) — skip it.
-                    }
-                },
-                handler
-            )
-        }
+        ChineseFonts.ALL
+            .filter { ChineseFonts.isEnabled(prefs, it) }
+            .forEach { font ->
+                val request = FontRequest(
+                    "com.google.android.gms.fonts",
+                    "com.google.android.gms",
+                    font.googleQuery,
+                    R.array.com_google_android_gms_fonts_certs
+                )
+                FontsContractCompat.requestFont(
+                    requireContext(),
+                    request,
+                    object : FontsContractCompat.FontRequestCallback() {
+                        override fun onTypefaceRetrieved(typeface: Typeface) {
+                            chineseTypefaces.add(typeface)
+                        }
+                        override fun onTypefaceRequestFailed(reason: Int) {
+                            // Font unavailable (no network / no Play Services) — skip it.
+                        }
+                    },
+                    handler
+                )
+            }
     }
 
     private fun initTts() {

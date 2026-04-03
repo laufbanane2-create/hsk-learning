@@ -5,8 +5,11 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.CheckBox
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import com.laufbanane2.hsklearning.R
+import com.laufbanane2.hsklearning.data.ChineseFonts
 import com.laufbanane2.hsklearning.databinding.FragmentSettingsBinding
 
 class SettingsFragment : Fragment() {
@@ -46,6 +49,38 @@ class SettingsFragment : Fragment() {
 
         binding.checkboxHsk1.setOnClickListener(saveListener)
         binding.checkboxHsk2.setOnClickListener(saveListener)
+
+        // Build font checkboxes dynamically from the shared font list.
+        ChineseFonts.ALL.forEach { font ->
+            val checkbox = CheckBox(requireContext()).apply {
+                text = font.displayName
+                textSize = 18f
+                isChecked = ChineseFonts.isEnabled(prefs, font)
+                val bottom = (12 * resources.displayMetrics.density).toInt()
+                setPadding(paddingLeft, paddingTop, paddingRight, bottom)
+
+                setOnClickListener {
+                    // Enforce at least one font enabled.
+                    val anyEnabled = ChineseFonts.ALL.any { f ->
+                        val cb = binding.groupFontCheckboxes.findViewWithTag<CheckBox>(f.key)
+                        cb?.isChecked ?: ChineseFonts.isEnabled(prefs, f)
+                    }
+                    if (!anyEnabled) {
+                        Toast.makeText(
+                            requireContext(),
+                            getString(R.string.toast_font_min_one),
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        isChecked = true
+                        return@setOnClickListener
+                    }
+                    prefs.edit().putBoolean(font.key, isChecked).apply()
+                }
+
+                tag = font.key
+            }
+            binding.groupFontCheckboxes.addView(checkbox)
+        }
     }
 
     override fun onDestroyView() {
@@ -53,3 +88,4 @@ class SettingsFragment : Fragment() {
         _binding = null
     }
 }
+

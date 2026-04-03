@@ -25,4 +25,7 @@
     <string name="hsk1_label">HSK 1 (35 basic words)</string>
     <string name="hsk2_label">HSK 2 (35 elementary words)</string>
     <string name="settings_note">Tap Learn to start a new session with the updated selection.</string>
+    <string name="settings_fonts_title">Character fonts</string>
+    <string name="settings_fonts_subtitle">Select which fonts are used to display the HSK character. At least one must be enabled.</string>
+    <string name="toast_font_min_one">Please keep at least one font enabled.</string>
 </resources>

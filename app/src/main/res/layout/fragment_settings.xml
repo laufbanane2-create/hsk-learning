@@ -54,5 +54,36 @@
             android:textIsSelectable="true"
             android:layout_marginBottom="32dp" />
 
+        <!-- Divider -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="?android:attr/listDivider"
+            android:layout_marginBottom="24dp" />
+
+        <!-- Font selector section -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/settings_fonts_title"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="4dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/settings_fonts_subtitle"
+            android:textSize="14sp"
+            android:textColor="?android:attr/textColorSecondary"
+            android:textIsSelectable="true"
+            android:layout_marginBottom="16dp" />
+
+        <LinearLayout
+            android:id="@+id/groupFontCheckboxes"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+
     </LinearLayout>
 </ScrollView>
