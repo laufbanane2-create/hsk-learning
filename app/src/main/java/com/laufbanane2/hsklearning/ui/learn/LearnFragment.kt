@@ -297,7 +297,7 @@ class LearnFragment : Fragment() {
         binding.textLevelBadge.text = "HSK ${item.level}"
         binding.textChinese.text = item.chinese
         if (chineseTypefaces.isNotEmpty()) {
-            binding.textChinese.typeface = Typeface.create(chineseTypefaces.random(), Typeface.BOLD)
+            binding.textChinese.typeface = chineseTypefaces.random()
         }
         binding.buttonShow.visibility = View.VISIBLE
         binding.buttonShow.isEnabled = true
