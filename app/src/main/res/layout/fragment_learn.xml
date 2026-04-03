@@ -69,6 +69,17 @@
                 android:textColor="?android:attr/textColorSecondary"
                 android:gravity="end" />
 
+            <!-- SRS interval / next-review time -->
+            <TextView
+                android:id="@+id/textNextReview"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:textSize="12sp"
+                android:textIsSelectable="true"
+                android:textColor="?android:attr/textColorSecondary"
+                android:gravity="end" />
+
             <!-- Chinese character (large, tappable to replay audio) -->
             <TextView
                 android:id="@+id/textChinese"
@@ -255,6 +266,42 @@
                 android:gravity="center"
                 android:textIsSelectable="true"
                 android:padding="32dp" />
+
+        </LinearLayout>
+
+        <!-- No-cards-due state -->
+        <LinearLayout
+            android:id="@+id/groupNoDue"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:paddingTop="80dp"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/no_due_title"
+                android:textSize="28sp"
+                android:textStyle="bold"
+                android:textIsSelectable="true"
+                android:layout_marginBottom="12dp" />
+
+            <TextView
+                android:id="@+id/textNoDueMessage"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="16sp"
+                android:gravity="center"
+                android:textIsSelectable="true"
+                android:layout_marginBottom="32dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/buttonStudyAll"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/button_study_all" />
 
         </LinearLayout>
 

@@ -15,6 +15,7 @@ import androidx.core.provider.FontsContractCompat
 import androidx.fragment.app.Fragment
 import com.laufbanane2.hsklearning.R
 import com.laufbanane2.hsklearning.data.ChineseFonts
+import com.laufbanane2.hsklearning.data.SrsManager
 import com.laufbanane2.hsklearning.data.StatsManager
 import com.laufbanane2.hsklearning.data.VocabData
 import com.laufbanane2.hsklearning.data.VocabItem
@@ -27,6 +28,7 @@ class LearnFragment : Fragment() {
     private val binding get() = _binding!!
 
     private lateinit var statsManager: StatsManager
+    private lateinit var srsManager: SrsManager
     private var tts: TextToSpeech? = null
     private var ttsReady = false
     private var mediaPlayer: MediaPlayer? = null
@@ -59,6 +61,7 @@ class LearnFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         statsManager = StatsManager(requireContext())
+        srsManager = SrsManager(requireContext())
 
         initTts()
         loadChineseFonts()
@@ -69,6 +72,7 @@ class LearnFragment : Fragment() {
         binding.buttonRight.setOnClickListener { handleAnswer(correct = true) }
         binding.buttonWrong.setOnClickListener { handleAnswer(correct = false) }
         binding.buttonRestart.setOnClickListener { loadVocab() }
+        binding.buttonStudyAll.setOnClickListener { loadVocab(reviewAll = true) }
     }
 
     // Only reload vocab when either:
@@ -219,18 +223,36 @@ class LearnFragment : Fragment() {
         }
     }
 
-    private fun loadVocab() {
+    private fun loadVocab(reviewAll: Boolean = false) {
         val prefs = requireContext().getSharedPreferences("settings", Context.MODE_PRIVATE)
         val hsk1 = prefs.getBoolean("hsk1_enabled", true)
         val hsk2 = prefs.getBoolean("hsk2_enabled", false)
         loadedHsk1 = hsk1
         loadedHsk2 = hsk2
         vocabLoaded = true
-        vocabList = VocabData.getVocab(hsk1, hsk2).shuffled()
+
+        val allVocab = VocabData.getVocab(hsk1, hsk2)
+
+        if (allVocab.isEmpty()) {
+            vocabList = emptyList()
+            showEmptyState()
+            return
+        }
+
+        if (reviewAll) {
+            // Review all cards regardless of due date, sorted most-overdue first.
+            vocabList = allVocab.sortedBy { srsManager.getNextReviewMs(it.id) }
+        } else {
+            // Only show cards that are currently due, sorted most-overdue first.
+            vocabList = allVocab
+                .filter { srsManager.isDue(it.id) }
+                .sortedBy { srsManager.getNextReviewMs(it.id) }
+        }
+
         currentIndex = 0
 
         if (vocabList.isEmpty()) {
-            showEmptyState()
+            showNoDueState(allVocab.map { it.id })
         } else {
             showCurrentWord()
         }
@@ -239,6 +261,23 @@ class LearnFragment : Fragment() {
     private fun showEmptyState() {
         binding.groupCard.visibility = View.GONE
         binding.groupEmpty.visibility = View.VISIBLE
+        binding.groupFinished.visibility = View.GONE
+        binding.groupNoDue.visibility = View.GONE
+    }
+
+    private fun showNoDueState(allIds: List<String>) {
+        binding.groupCard.visibility = View.GONE
+        binding.groupEmpty.visibility = View.GONE
+        binding.groupFinished.visibility = View.GONE
+        binding.groupNoDue.visibility = View.VISIBLE
+
+        val nextDue = srsManager.nextDueAfterNow(allIds)
+        binding.textNoDueMessage.text = if (nextDue != null) {
+            val diffMs = nextDue - System.currentTimeMillis()
+            getString(R.string.no_due_message_future, srsManager.formatMs(diffMs))
+        } else {
+            getString(R.string.no_due_message_now)
+        }
     }
 
     private fun showCurrentWord() {
@@ -252,6 +291,7 @@ class LearnFragment : Fragment() {
         binding.groupCard.visibility = View.VISIBLE
         binding.groupEmpty.visibility = View.GONE
         binding.groupFinished.visibility = View.GONE
+        binding.groupNoDue.visibility = View.GONE
 
         binding.textProgress.text = "${currentIndex + 1} / ${vocabList.size}"
         binding.textLevelBadge.text = "HSK ${item.level}"
@@ -268,6 +308,9 @@ class LearnFragment : Fragment() {
         val correct = statsManager.getCorrect(item.id)
         val wrong = statsManager.getWrong(item.id)
         binding.textStats.text = "✓ $correct   ✗ $wrong"
+
+        binding.textNextReview.text =
+            getString(R.string.label_interval, srsManager.formatInterval(item.id))
 
         speakSentence(item.sentence)
     }
@@ -293,9 +336,13 @@ class LearnFragment : Fragment() {
         } else {
             statsManager.incrementWrong(item.id)
         }
+        srsManager.recordAnswer(item.id, correct)
+
         val c = statsManager.getCorrect(item.id)
         val w = statsManager.getWrong(item.id)
         binding.textStats.text = "✓ $c   ✗ $w"
+        binding.textNextReview.text =
+            getString(R.string.label_interval, srsManager.formatInterval(item.id))
 
         currentIndex++
         showCurrentWord()
@@ -305,6 +352,7 @@ class LearnFragment : Fragment() {
         binding.groupCard.visibility = View.GONE
         binding.groupEmpty.visibility = View.GONE
         binding.groupFinished.visibility = View.VISIBLE
+        binding.groupNoDue.visibility = View.GONE
     }
 
     override fun onDestroyView() {
