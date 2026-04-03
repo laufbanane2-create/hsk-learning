@@ -109,10 +109,27 @@ class LearnFragment : Fragment() {
     // Entry point for all audio playback.
     // Increments the utterance ID so that any in-flight callbacks for the
     // previous word are silently discarded when they arrive.
+    //
+    // Priority:
+    //  1. Bundled raw resource MP3 (pre-generated at build time via
+    //     `./gradlew generateAudio`) — zero network, zero API key required.
+    //  2. Runtime ElevenLabs API call (requires API key in settings).
+    //  3. Android device TextToSpeech fallback.
     private fun speakSentence(sentence: String) {
         val utteranceId = ++currentUtteranceId
         stopCurrentAudio()
 
+        // 1. Try the bundled pre-generated MP3 for this vocabulary item.
+        val vocabId = currentItem?.id
+        if (vocabId != null) {
+            val resId = resources.getIdentifier(vocabId, "raw", requireContext().packageName)
+            if (resId != 0) {
+                playRawResource(resId)
+                return
+            }
+        }
+
+        // 2. Fall back to runtime ElevenLabs when no bundled file exists.
         val apiKey = requireContext()
             .getSharedPreferences("settings", Context.MODE_PRIVATE)
             .getString("elevenlabs_api_key", "") ?: ""
@@ -138,7 +155,27 @@ class LearnFragment : Fragment() {
                 }
             )
         } else {
+            // 3. Device TTS as last resort.
             speakWithTts(sentence)
+        }
+    }
+
+    private fun playRawResource(resId: Int) {
+        activity?.runOnUiThread {
+            stopCurrentAudio()
+            try {
+                mediaPlayer = MediaPlayer.create(requireContext(), resId)?.apply {
+                    setOnCompletionListener {
+                        it.release()
+                        if (mediaPlayer == it) mediaPlayer = null
+                    }
+                    start()
+                }
+            } catch (e: Exception) {
+                // Bundled file unplayable — log and fall back to TTS.
+                android.util.Log.e("LearnFragment", "Failed to play raw resource $resId", e)
+                currentItem?.let { speakWithTts(it.sentence) }
+            }
         }
     }
 
