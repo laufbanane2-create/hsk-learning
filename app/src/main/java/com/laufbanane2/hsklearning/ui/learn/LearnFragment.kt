@@ -72,6 +72,7 @@ class LearnFragment : Fragment() {
     }
 
     private fun initTts() {
+        tts = TextToSpeech(requireContext()) { status ->
             if (status == TextToSpeech.SUCCESS) {
                 val result = tts?.setLanguage(Locale.SIMPLIFIED_CHINESE)
                 ttsReady = result != TextToSpeech.LANG_MISSING_DATA &&
