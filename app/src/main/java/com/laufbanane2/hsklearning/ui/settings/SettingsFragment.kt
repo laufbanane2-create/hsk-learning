@@ -19,6 +19,7 @@ import androidx.fragment.app.Fragment
 import com.laufbanane2.hsklearning.R
 import com.laufbanane2.hsklearning.data.ChineseFont
 import com.laufbanane2.hsklearning.data.ChineseFonts
+import com.laufbanane2.hsklearning.data.VocabData
 import com.laufbanane2.hsklearning.databinding.FragmentSettingsBinding
 
 class SettingsFragment : Fragment() {
@@ -40,6 +41,9 @@ class SettingsFragment : Fragment() {
         val prefs = requireContext().getSharedPreferences("settings", Context.MODE_PRIVATE)
         binding.checkboxHsk1.isChecked = prefs.getBoolean("hsk1_enabled", true)
         binding.checkboxHsk2.isChecked = prefs.getBoolean("hsk2_enabled", false)
+
+        binding.checkboxHsk1.text = getString(R.string.hsk1_label, VocabData.hsk1.size)
+        binding.checkboxHsk2.text = getString(R.string.hsk2_label, VocabData.hsk2.size)
 
         val saveListener = View.OnClickListener {
             val hsk1 = binding.checkboxHsk1.isChecked
