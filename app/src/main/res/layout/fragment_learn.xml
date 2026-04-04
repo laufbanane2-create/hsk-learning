@@ -89,7 +89,6 @@
                 android:layout_marginBottom="8dp"
                 android:gravity="center"
                 android:textSize="96sp"
-                android:textStyle="bold"
                 android:textColor="?android:attr/textColorPrimary"
                 android:clickable="true"
                 android:focusable="true"

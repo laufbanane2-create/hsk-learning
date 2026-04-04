@@ -240,13 +240,13 @@ class LearnFragment : Fragment() {
         }
 
         if (reviewAll) {
-            // Review all cards regardless of due date, sorted most-overdue first.
-            vocabList = allVocab.sortedBy { srsManager.getNextReviewMs(it.id) }
+            // Review all cards regardless of due date, in random order.
+            vocabList = allVocab.shuffled()
         } else {
-            // Only show cards that are currently due, sorted most-overdue first.
+            // Only show cards that are currently due, in random order.
             vocabList = allVocab
                 .filter { srsManager.isDue(it.id) }
-                .sortedBy { srsManager.getNextReviewMs(it.id) }
+                .shuffled()
         }
 
         currentIndex = 0
