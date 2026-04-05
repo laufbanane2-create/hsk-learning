@@ -384,9 +384,10 @@ class LearnFragment : Fragment() {
         binding.groupAnswer.visibility = View.VISIBLE
         binding.groupActions.visibility = View.VISIBLE
 
-        // Play audio on reveal for READING_SENTENCE (as specified).
-        // LISTENING already played audio at the start; READING is intentionally silent.
-        if (card.aspect == SrsManager.AspectType.READING_SENTENCE) {
+        // Play audio on reveal for READING and READING_SENTENCE.
+        // LISTENING already played audio at the start of the card.
+        if (card.aspect == SrsManager.AspectType.READING ||
+            card.aspect == SrsManager.AspectType.READING_SENTENCE) {
             speakSentence(item.sentence)
         }
     }
