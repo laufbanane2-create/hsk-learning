@@ -63,6 +63,24 @@ class SettingsFragment : Fragment() {
         binding.checkboxHsk1.setOnClickListener(saveListener)
         binding.checkboxHsk2.setOnClickListener(saveListener)
 
+        // Active deck size
+        val deckSize = prefs.getInt("active_deck_size", 10)
+        when (deckSize) {
+            5    -> binding.radioDeck5.isChecked = true
+            15   -> binding.radioDeck15.isChecked = true
+            20   -> binding.radioDeck20.isChecked = true
+            else -> binding.radioDeck10.isChecked = true
+        }
+        binding.radioGroupDeckSize.setOnCheckedChangeListener { _, checkedId ->
+            val size = when (checkedId) {
+                R.id.radioDeck5  -> 5
+                R.id.radioDeck15 -> 15
+                R.id.radioDeck20 -> 20
+                else             -> 10
+            }
+            prefs.edit().putInt("active_deck_size", size).apply()
+        }
+
         // Build font rows dynamically: [CheckBox] [tappable font-name label]
         val density = resources.displayMetrics.density
         val rowBottomMargin = (12 * density).toInt()

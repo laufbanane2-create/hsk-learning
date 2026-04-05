@@ -13,6 +13,7 @@ import android.view.ViewGroup
 import androidx.core.provider.FontRequest
 import androidx.core.provider.FontsContractCompat
 import androidx.fragment.app.Fragment
+import com.google.android.material.snackbar.Snackbar
 import com.laufbanane2.hsklearning.R
 import com.laufbanane2.hsklearning.data.ChineseFonts
 import com.laufbanane2.hsklearning.data.SrsManager
@@ -34,6 +35,7 @@ class LearnFragment : Fragment() {
     private var mediaPlayer: MediaPlayer? = null
 
     private var vocabList: List<VocabItem> = emptyList()
+    private var allVocab: List<VocabItem> = emptyList()
     private var currentIndex = 0
     private var currentItem: VocabItem? = null
 
@@ -42,6 +44,7 @@ class LearnFragment : Fragment() {
     // to another app and comes back.
     private var loadedHsk1 = false
     private var loadedHsk2 = false
+    private var loadedDeckSize = -1
     private var vocabLoaded = false
 
     // Loaded Chinese typefaces; populated asynchronously at startup.
@@ -49,6 +52,10 @@ class LearnFragment : Fragment() {
     // and all reads happen in showCurrentWord() on the main thread, so no
     // synchronisation is needed.
     private val chineseTypefaces = mutableListOf<Typeface>()
+
+    companion object {
+        private const val DEFAULT_ACTIVE_DECK_SIZE = 10
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -77,7 +84,7 @@ class LearnFragment : Fragment() {
 
     // Only reload vocab when either:
     //  • it hasn't been loaded yet (fresh fragment after a tab switch), or
-    //  • the user changed the HSK-level settings while away.
+    //  • the user changed the HSK-level settings or active deck size while away.
     // This prevents a new word from appearing whenever the user multi-tasks
     // to another app and returns.
     override fun onResume() {
@@ -85,7 +92,8 @@ class LearnFragment : Fragment() {
         val prefs = requireContext().getSharedPreferences("settings", Context.MODE_PRIVATE)
         val hsk1 = prefs.getBoolean("hsk1_enabled", true)
         val hsk2 = prefs.getBoolean("hsk2_enabled", false)
-        if (!vocabLoaded || hsk1 != loadedHsk1 || hsk2 != loadedHsk2) {
+        val deckSize = prefs.getInt("active_deck_size", DEFAULT_ACTIVE_DECK_SIZE)
+        if (!vocabLoaded || hsk1 != loadedHsk1 || hsk2 != loadedHsk2 || deckSize != loadedDeckSize) {
             loadVocab()
         }
         // Always reload fonts on resume so changes made in Settings are picked up.
@@ -227,11 +235,13 @@ class LearnFragment : Fragment() {
         val prefs = requireContext().getSharedPreferences("settings", Context.MODE_PRIVATE)
         val hsk1 = prefs.getBoolean("hsk1_enabled", true)
         val hsk2 = prefs.getBoolean("hsk2_enabled", false)
+        val deckSize = prefs.getInt("active_deck_size", DEFAULT_ACTIVE_DECK_SIZE)
         loadedHsk1 = hsk1
         loadedHsk2 = hsk2
+        loadedDeckSize = deckSize
         vocabLoaded = true
 
-        val allVocab = VocabData.getVocab(hsk1, hsk2)
+        allVocab = VocabData.getVocab(hsk1, hsk2)
 
         if (allVocab.isEmpty()) {
             vocabList = emptyList()
@@ -239,20 +249,26 @@ class LearnFragment : Fragment() {
             return
         }
 
+        val allIds = allVocab.map { it.id }
+
+        // Promote NEW cards into empty active slots.
+        srsManager.initializeActiveDeck(allIds, deckSize)
+
         if (reviewAll) {
-            // Review all cards regardless of due date, in random order.
+            // Review all cards regardless of due date or status, in random order.
             vocabList = allVocab.shuffled()
         } else {
-            // Only show cards that are currently due, in random order.
+            // Normal mode: only show ACTIVE cards that are currently due.
+            val activeIds = srsManager.getActiveIds(allIds).toSet()
             vocabList = allVocab
-                .filter { srsManager.isDue(it.id) }
+                .filter { it.id in activeIds && srsManager.isDue(it.id) }
                 .shuffled()
         }
 
         currentIndex = 0
 
         if (vocabList.isEmpty()) {
-            showNoDueState(allVocab.map { it.id })
+            showNoDueState(srsManager.getActiveIds(allIds))
         } else {
             showCurrentWord()
         }
@@ -293,7 +309,12 @@ class LearnFragment : Fragment() {
         binding.groupFinished.visibility = View.GONE
         binding.groupNoDue.visibility = View.GONE
 
-        binding.textProgress.text = "${currentIndex + 1} / ${vocabList.size}"
+        binding.textProgress.text = getString(
+            R.string.label_progress,
+            currentIndex + 1,
+            vocabList.size,
+            srsManager.getActiveIds(allVocab.map { it.id }).size
+        )
         binding.textLevelBadge.text = "HSK ${item.level}"
         binding.textChinese.text = item.chinese
         if (chineseTypefaces.isNotEmpty()) {
@@ -337,6 +358,13 @@ class LearnFragment : Fragment() {
             statsManager.incrementWrong(item.id)
         }
         srsManager.recordAnswer(item.id, correct)
+
+        if (correct && srsManager.shouldGraduate(item.id)) {
+            val prefs = requireContext().getSharedPreferences("settings", Context.MODE_PRIVATE)
+            val deckSize = prefs.getInt("active_deck_size", DEFAULT_ACTIVE_DECK_SIZE)
+            srsManager.graduateCard(item.id, allVocab.map { it.id }, deckSize)
+            Snackbar.make(binding.root, getString(R.string.word_graduated), Snackbar.LENGTH_SHORT).show()
+        }
 
         val c = statsManager.getCorrect(item.id)
         val w = statsManager.getWrong(item.id)

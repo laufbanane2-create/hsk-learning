@@ -23,6 +23,8 @@
     <string name="no_due_message_now">Cards are now due – tap below to start!</string>
     <string name="button_study_all">Review all cards anyway</string>
     <string name="label_interval">Interval: %s</string>
+    <string name="label_progress">%1$d / %2$d  ·  %3$d active</string>
+    <string name="word_graduated">🎉 Word mastered! A new word has been added.</string>
 
     <!-- Settings screen -->
     <string name="settings_title">Settings</string>
@@ -36,4 +38,6 @@
     <string name="font_preview_title">Font preview</string>
     <string name="font_preview_sample">我在学习汉语。</string>
     <string name="font_preview_loading">Loading font…</string>
+    <string name="settings_deck_title">Active deck size</string>
+    <string name="settings_deck_subtitle">Number of words you actively study at once. Master a word (3 correct in a row) to unlock the next one from the queue.</string>
 </resources>

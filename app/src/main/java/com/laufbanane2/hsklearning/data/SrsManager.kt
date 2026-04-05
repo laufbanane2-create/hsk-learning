@@ -10,13 +10,23 @@ import android.content.Context
  *  - nextReviewMs – epoch-ms timestamp when the card is next due
  *  - repetitions  – consecutive correct answers
  *  - easeFactor   – multiplier applied to the interval on a correct answer
+ *  - status       – lifecycle state: NEW → ACTIVE → GRADUATED
  *
  * Correct answer → interval grows (× easeFactor), ease increases slightly.
  * Wrong answer   → interval resets to 1 minute, ease decreases slightly.
+ *
+ * Active/passive deck:
+ *  Only ACTIVE cards are shown during normal study. A card is promoted from
+ *  NEW to ACTIVE when an empty slot in the active deck is available.
+ *  A card graduates (ACTIVE → GRADUATED) after [GRADUATION_THRESHOLD]
+ *  consecutive correct answers, immediately promoting the next NEW card so
+ *  the deck stays full.
  */
 class SrsManager(context: Context) {
 
     private val prefs = context.getSharedPreferences("srs_data", Context.MODE_PRIVATE)
+
+    enum class CardStatus { NEW, ACTIVE, GRADUATED }
 
     companion object {
         private const val DEFAULT_EASE = 2.5f
@@ -25,6 +35,61 @@ class SrsManager(context: Context) {
         private const val MIN_INTERVAL_MS = 60_000L          // 1 minute
         private const val FIRST_CORRECT_MS = 60_000L         // 1 minute
         private const val SECOND_CORRECT_MS = 600_000L       // 10 minutes
+        /** Consecutive correct answers required to graduate a card. */
+        const val GRADUATION_THRESHOLD = 3
+    }
+
+    // ── Card status ───────────────────────────────────────────────────────────
+
+    fun getCardStatus(vocabId: String): CardStatus =
+        when (prefs.getString("${vocabId}_status", "new")) {
+            "active"    -> CardStatus.ACTIVE
+            "graduated" -> CardStatus.GRADUATED
+            else        -> CardStatus.NEW
+        }
+
+    private fun setCardStatus(vocabId: String, status: CardStatus) {
+        prefs.edit().putString("${vocabId}_status", status.name.lowercase()).apply()
+    }
+
+    /** Returns all IDs from [allIds] whose status is [CardStatus.ACTIVE]. */
+    fun getActiveIds(allIds: List<String>): List<String> =
+        allIds.filter { getCardStatus(it) == CardStatus.ACTIVE }
+
+    /**
+     * Ensures the active deck has [deckSize] cards by promoting NEW cards into
+     * empty slots. Already-ACTIVE and GRADUATED cards are left untouched.
+     * Safe to call every time a session loads — it only fills empty slots.
+     */
+    fun initializeActiveDeck(allIds: List<String>, deckSize: Int) {
+        val currentActiveCount = allIds.count { getCardStatus(it) == CardStatus.ACTIVE }
+        val slotsToFill = (deckSize - currentActiveCount).coerceAtLeast(0)
+        if (slotsToFill > 0) {
+            allIds
+                .filter { getCardStatus(it) == CardStatus.NEW }
+                .take(slotsToFill)
+                .forEach { setCardStatus(it, CardStatus.ACTIVE) }
+        }
+    }
+
+    /**
+     * Returns true when [vocabId] has accumulated enough consecutive correct
+     * answers to graduate. Call this after [recordAnswer] on a correct answer.
+     */
+    fun shouldGraduate(vocabId: String): Boolean =
+        prefs.getInt("${vocabId}_reps", 0) >= GRADUATION_THRESHOLD
+
+    /**
+     * Graduates [vocabId] (ACTIVE → GRADUATED) and immediately promotes the
+     * next NEW card from [allIds] so the active deck stays full.
+     */
+    fun graduateCard(vocabId: String, allIds: List<String>, deckSize: Int) {
+        setCardStatus(vocabId, CardStatus.GRADUATED)
+        val currentActiveCount = allIds.count { getCardStatus(it) == CardStatus.ACTIVE }
+        if (currentActiveCount < deckSize) {
+            allIds.firstOrNull { getCardStatus(it) == CardStatus.NEW }
+                ?.let { setCardStatus(it, CardStatus.ACTIVE) }
+        }
     }
 
     // ── Public queries ────────────────────────────────────────────────────────
