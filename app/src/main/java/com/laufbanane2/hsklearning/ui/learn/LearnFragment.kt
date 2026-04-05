@@ -58,7 +58,13 @@ class LearnFragment : Fragment() {
 
     companion object {
         private const val DEFAULT_ACTIVE_DECK_SIZE = 10
+        private const val TEXT_SIZE_WORD_SP = 96f
+        private const val TEXT_SIZE_LISTEN_SP = 72f
+        private const val TEXT_SIZE_SENTENCE_SP = 24f
     }
+
+    // All vocab IDs for the currently loaded vocabulary set; kept in sync with allVocab.
+    private var allVocabIds: List<String> = emptyList()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -232,6 +238,7 @@ class LearnFragment : Fragment() {
         vocabLoaded = true
 
         allVocab = VocabData.getVocab(hsk1, hsk2)
+        allVocabIds = allVocab.map { it.id }
 
         if (allVocab.isEmpty()) {
             vocabList = emptyList()
@@ -239,7 +246,7 @@ class LearnFragment : Fragment() {
             return
         }
 
-        val allIds = allVocab.map { it.id }
+        val allIds = allVocabIds
 
         srsManager.initializeActiveDeck(allIds, deckSize)
         activeDeckCount = srsManager.getActiveIds(allIds).size
@@ -341,7 +348,7 @@ class LearnFragment : Fragment() {
             SrsManager.AspectType.READING -> {
                 // Show the Chinese word only — no audio.
                 binding.textChinese.text = item.chinese
-                binding.textChinese.setTextSize(TypedValue.COMPLEX_UNIT_SP, 96f)
+                binding.textChinese.setTextSize(TypedValue.COMPLEX_UNIT_SP, TEXT_SIZE_WORD_SP)
                 if (chineseTypefaces.isNotEmpty()) {
                     binding.textChinese.typeface = chineseTypefaces.random()
                 }
@@ -349,13 +356,13 @@ class LearnFragment : Fragment() {
             SrsManager.AspectType.LISTENING -> {
                 // Play the sentence audio; show a speaker icon as the prompt.
                 binding.textChinese.text = "🔊"
-                binding.textChinese.setTextSize(TypedValue.COMPLEX_UNIT_SP, 72f)
+                binding.textChinese.setTextSize(TypedValue.COMPLEX_UNIT_SP, TEXT_SIZE_LISTEN_SP)
                 speakSentence(item.sentence)
             }
             SrsManager.AspectType.READING_SENTENCE -> {
                 // Show the Chinese sentence without pinyin — no audio.
                 binding.textChinese.text = item.sentence
-                binding.textChinese.setTextSize(TypedValue.COMPLEX_UNIT_SP, 24f)
+                binding.textChinese.setTextSize(TypedValue.COMPLEX_UNIT_SP, TEXT_SIZE_SENTENCE_SP)
                 if (chineseTypefaces.isNotEmpty()) {
                     binding.textChinese.typeface = chineseTypefaces.random()
                 }
@@ -398,9 +405,8 @@ class LearnFragment : Fragment() {
         if (correct && srsManager.shouldGraduate(item.id)) {
             val prefs = requireContext().getSharedPreferences("settings", Context.MODE_PRIVATE)
             val deckSize = prefs.getInt("active_deck_size", DEFAULT_ACTIVE_DECK_SIZE)
-            val allIds = allVocab.map { it.id }
-            srsManager.graduateCard(item.id, allIds, deckSize)
-            activeDeckCount = srsManager.getActiveIds(allIds).size
+            srsManager.graduateCard(item.id, allVocabIds, deckSize)
+            activeDeckCount = srsManager.getActiveIds(allVocabIds).size
             Snackbar.make(binding.root, getString(R.string.word_graduated), Snackbar.LENGTH_SHORT).show()
         }
 
