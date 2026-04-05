@@ -5,12 +5,14 @@ import android.content.Context
 /**
  * Spaced-repetition scheduler (SM-2 inspired).
  *
- * Each vocabulary card tracks:
- *  - intervalMs   – current review interval in milliseconds
- *  - nextReviewMs – epoch-ms timestamp when the card is next due
- *  - repetitions  – consecutive correct answers
- *  - easeFactor   – multiplier applied to the interval on a correct answer
- *  - status       – lifecycle state: NEW → ACTIVE → GRADUATED
+ * Each vocabulary card has three independently-scheduled aspects:
+ *  - READING        – recognise the Chinese word (no audio)
+ *  - LISTENING      – translate the spoken sentence (audio only)
+ *  - READING_SENTENCE – translate the written Chinese sentence (no pinyin)
+ *
+ * Each aspect tracks its own interval, nextReview, repetitions, and ease.
+ * A card graduates (ACTIVE → GRADUATED) only once ALL three aspects have
+ * been mastered ([GRADUATION_THRESHOLD] consecutive correct answers each).
  *
  * Correct answer → interval grows (× easeFactor), ease increases slightly.
  * Wrong answer   → interval resets to 1 minute, ease decreases slightly.
@@ -18,15 +20,21 @@ import android.content.Context
  * Active/passive deck:
  *  Only ACTIVE cards are shown during normal study. A card is promoted from
  *  NEW to ACTIVE when an empty slot in the active deck is available.
- *  A card graduates (ACTIVE → GRADUATED) after [GRADUATION_THRESHOLD]
- *  consecutive correct answers, immediately promoting the next NEW card so
- *  the deck stays full.
+ *  The deck stays full by immediately promoting the next NEW card after a
+ *  graduation.
  */
 class SrsManager(context: Context) {
 
     private val prefs = context.getSharedPreferences("srs_data", Context.MODE_PRIVATE)
 
     enum class CardStatus { NEW, ACTIVE, GRADUATED }
+
+    /** The three independently-tracked study aspects for every vocabulary card. */
+    enum class AspectType(val key: String) {
+        READING("reading"),
+        LISTENING("listening"),
+        READING_SENTENCE("reading_sentence")
+    }
 
     companion object {
         private const val DEFAULT_EASE = 2.5f
@@ -35,8 +43,9 @@ class SrsManager(context: Context) {
         private const val MIN_INTERVAL_MS = 60_000L          // 1 minute
         private const val FIRST_CORRECT_MS = 60_000L         // 1 minute
         private const val SECOND_CORRECT_MS = 600_000L       // 10 minutes
-        /** Consecutive correct answers required to graduate a card. */
+        /** Consecutive correct answers required to graduate one aspect. */
         const val GRADUATION_THRESHOLD = 3
+        val ALL_ASPECTS: List<AspectType> = AspectType.values().toList()
     }
 
     // ── Card status ───────────────────────────────────────────────────────────
@@ -73,11 +82,11 @@ class SrsManager(context: Context) {
     }
 
     /**
-     * Returns true when [vocabId] has accumulated enough consecutive correct
-     * answers to graduate. Call this after [recordAnswer] on a correct answer.
+     * Returns true when ALL three aspects of [vocabId] have been mastered
+     * ([GRADUATION_THRESHOLD] consecutive correct answers each).
      */
     fun shouldGraduate(vocabId: String): Boolean =
-        prefs.getInt("${vocabId}_reps", 0) >= GRADUATION_THRESHOLD
+        ALL_ASPECTS.all { isAspectGraduated(vocabId, it) }
 
     /**
      * Graduates [vocabId] (ACTIVE → GRADUATED) and immediately promotes the
@@ -92,34 +101,55 @@ class SrsManager(context: Context) {
         }
     }
 
-    // ── Public queries ────────────────────────────────────────────────────────
+    // ── Aspect-specific storage keys ──────────────────────────────────────────
 
-    fun getIntervalMs(vocabId: String): Long =
-        prefs.getLong("${vocabId}_interval", 0L)
+    private fun repsKey(vocabId: String, aspect: AspectType) = "${vocabId}_${aspect.key}_reps"
+    private fun intervalKey(vocabId: String, aspect: AspectType) = "${vocabId}_${aspect.key}_interval"
+    private fun nextReviewKey(vocabId: String, aspect: AspectType) = "${vocabId}_${aspect.key}_next_review"
+    private fun easeKey(vocabId: String, aspect: AspectType) = "${vocabId}_${aspect.key}_ease"
 
-    fun getNextReviewMs(vocabId: String): Long =
-        prefs.getLong("${vocabId}_next_review", 0L)
+    // ── Aspect-specific queries ───────────────────────────────────────────────
 
-    /** True when the card has never been answered or its due timestamp has passed. */
-    fun isDue(vocabId: String): Boolean =
-        getNextReviewMs(vocabId) <= System.currentTimeMillis()
+    fun getAspectIntervalMs(vocabId: String, aspect: AspectType): Long =
+        prefs.getLong(intervalKey(vocabId, aspect), 0L)
+
+    fun getAspectNextReviewMs(vocabId: String, aspect: AspectType): Long =
+        prefs.getLong(nextReviewKey(vocabId, aspect), 0L)
+
+    /** True when this aspect has never been answered or its due timestamp has passed. */
+    fun isAspectDue(vocabId: String, aspect: AspectType): Boolean =
+        getAspectNextReviewMs(vocabId, aspect) <= System.currentTimeMillis()
+
+    /** True when this aspect has reached [GRADUATION_THRESHOLD] consecutive correct answers. */
+    fun isAspectGraduated(vocabId: String, aspect: AspectType): Boolean =
+        prefs.getInt(repsKey(vocabId, aspect), 0) >= GRADUATION_THRESHOLD
 
     /**
-     * Returns the earliest future due-timestamp among [vocabIds],
-     * or null if every card is already due.
+     * True when the card has at least one aspect that is currently due.
+     * Used to filter the active deck down to cards that need reviewing today.
+     */
+    fun isDue(vocabId: String): Boolean =
+        ALL_ASPECTS.any { isAspectDue(vocabId, it) }
+
+    /**
+     * Returns the earliest future due-timestamp across all [vocabIds] and all
+     * aspects, or null if every (vocab, aspect) pair is already due.
      */
     fun nextDueAfterNow(vocabIds: List<String>): Long? {
         val now = System.currentTimeMillis()
-        return vocabIds.map { getNextReviewMs(it) }.filter { it > now }.minOrNull()
+        return vocabIds
+            .flatMap { id -> ALL_ASPECTS.map { getAspectNextReviewMs(id, it) } }
+            .filter { it > now }
+            .minOrNull()
     }
 
     // ── Answer recording ──────────────────────────────────────────────────────
 
-    fun recordAnswer(vocabId: String, correct: Boolean) {
+    fun recordAnswer(vocabId: String, aspect: AspectType, correct: Boolean) {
         val now = System.currentTimeMillis()
-        val intervalMs = getIntervalMs(vocabId)
-        val reps = prefs.getInt("${vocabId}_reps", 0)
-        val ease = prefs.getFloat("${vocabId}_ease", DEFAULT_EASE)
+        val intervalMs = getAspectIntervalMs(vocabId, aspect)
+        val reps = prefs.getInt(repsKey(vocabId, aspect), 0)
+        val ease = prefs.getFloat(easeKey(vocabId, aspect), DEFAULT_EASE)
 
         val newIntervalMs: Long
         val newReps: Int
@@ -140,27 +170,19 @@ class SrsManager(context: Context) {
         }
 
         prefs.edit()
-            .putLong("${vocabId}_interval", newIntervalMs)
-            .putLong("${vocabId}_next_review", now + newIntervalMs)
-            .putInt("${vocabId}_reps", newReps)
-            .putFloat("${vocabId}_ease", newEase)
+            .putLong(intervalKey(vocabId, aspect), newIntervalMs)
+            .putLong(nextReviewKey(vocabId, aspect), now + newIntervalMs)
+            .putInt(repsKey(vocabId, aspect), newReps)
+            .putFloat(easeKey(vocabId, aspect), newEase)
             .apply()
     }
 
     // ── Formatting helpers ────────────────────────────────────────────────────
 
-    /** Human-readable interval for a card (e.g. "New", "5m", "2h 10m", "3d 4h"). */
-    fun formatInterval(vocabId: String): String {
-        val ms = getIntervalMs(vocabId)
+    /** Human-readable interval for a specific aspect (e.g. "New", "5m", "2h 10m"). */
+    fun formatAspectInterval(vocabId: String, aspect: AspectType): String {
+        val ms = getAspectIntervalMs(vocabId, aspect)
         return if (ms == 0L) "New" else formatMs(ms)
-    }
-
-    /** Human-readable time until the card is next due (e.g. "Due now", "in 1h 30m"). */
-    fun formatNextReview(vocabId: String): String {
-        val nextMs = getNextReviewMs(vocabId)
-        if (nextMs == 0L) return "New"
-        val diffMs = nextMs - System.currentTimeMillis()
-        return if (diffMs <= 0) "Due now" else "in ${formatMs(diffMs)}"
     }
 
     fun formatMs(ms: Long): String {

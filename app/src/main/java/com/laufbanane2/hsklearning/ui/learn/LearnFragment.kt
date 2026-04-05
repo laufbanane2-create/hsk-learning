@@ -7,6 +7,7 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.speech.tts.TextToSpeech
+import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -34,25 +35,25 @@ class LearnFragment : Fragment() {
     private var ttsReady = false
     private var mediaPlayer: MediaPlayer? = null
 
-    private var vocabList: List<VocabItem> = emptyList()
+    /** A vocabulary item paired with the aspect being tested in this session slot. */
+    private data class AspectCard(val item: VocabItem, val aspect: SrsManager.AspectType)
+
+    private var vocabList: List<AspectCard> = emptyList()
     private var allVocab: List<VocabItem> = emptyList()
     private var currentIndex = 0
-    private var currentItem: VocabItem? = null
+    private var currentAspectCard: AspectCard? = null
+    // Convenience accessor used by speakSentence() to look up the raw audio resource.
+    private val currentItem: VocabItem? get() = currentAspectCard?.item
     // Cached count of active cards; updated in loadVocab and after each graduation.
     private var activeDeckCount = 0
 
     // Settings that were in effect the last time loadVocab() ran.
-    // Used to avoid reshuffling the deck when the user simply switches away
-    // to another app and comes back.
     private var loadedHsk1 = false
     private var loadedHsk2 = false
     private var loadedDeckSize = -1
     private var vocabLoaded = false
 
     // Loaded Chinese typefaces; populated asynchronously at startup.
-    // All mutations happen on the main-thread Handler passed to FontsContractCompat,
-    // and all reads happen in showCurrentWord() on the main thread, so no
-    // synchronisation is needed.
     private val chineseTypefaces = mutableListOf<Typeface>()
 
     companion object {
@@ -77,18 +78,13 @@ class LearnFragment : Fragment() {
         setupMuteButton()
 
         binding.buttonShow.setOnClickListener { revealAnswer() }
-        binding.textChinese.setOnClickListener { currentItem?.let { speakSentence(it.sentence) } }
+        binding.textChinese.setOnClickListener { onChineseTextClicked() }
         binding.buttonRight.setOnClickListener { handleAnswer(correct = true) }
         binding.buttonWrong.setOnClickListener { handleAnswer(correct = false) }
         binding.buttonRestart.setOnClickListener { loadVocab() }
         binding.buttonStudyAll.setOnClickListener { loadVocab(reviewAll = true) }
     }
 
-    // Only reload vocab when either:
-    //  • it hasn't been loaded yet (fresh fragment after a tab switch), or
-    //  • the user changed the HSK-level settings or active deck size while away.
-    // This prevents a new word from appearing whenever the user multitasks
-    // to another app and returns.
     override fun onResume() {
         super.onResume()
         val prefs = requireContext().getSharedPreferences("settings", Context.MODE_PRIVATE)
@@ -98,7 +94,6 @@ class LearnFragment : Fragment() {
         if (!vocabLoaded || hsk1 != loadedHsk1 || hsk2 != loadedHsk2 || deckSize != loadedDeckSize) {
             loadVocab()
         }
-        // Always reload fonts on resume so changes made in Settings are picked up.
         loadChineseFonts()
     }
 
@@ -108,8 +103,6 @@ class LearnFragment : Fragment() {
     }
 
     private fun setupMuteButton() {
-        // updateMuteIcon() runs here, before the first frame, so the icon
-        // always reflects the persisted state even if the user previously muted.
         updateMuteIcon()
         binding.buttonMute.setOnClickListener {
             val prefs = requireContext().getSharedPreferences("settings", Context.MODE_PRIVATE)
@@ -130,10 +123,6 @@ class LearnFragment : Fragment() {
         )
     }
 
-    // Request the Chinese fonts from the Google Fonts provider asynchronously.
-    // Only fonts enabled in settings are requested.
-    // Each font that loads successfully is added to chineseTypefaces and will
-    // be picked up the next time a new word is shown.
     private fun loadChineseFonts() {
         chineseTypefaces.clear()
         val prefs = requireContext().getSharedPreferences("settings", Context.MODE_PRIVATE)
@@ -154,9 +143,7 @@ class LearnFragment : Fragment() {
                         override fun onTypefaceRetrieved(typeface: Typeface) {
                             chineseTypefaces.add(typeface)
                         }
-                        override fun onTypefaceRequestFailed(reason: Int) {
-                            // Font unavailable (no network / no Play Services) — skip it.
-                        }
+                        override fun onTypefaceRequestFailed(reason: Int) {}
                     },
                     handler
                 )
@@ -174,7 +161,6 @@ class LearnFragment : Fragment() {
         }
     }
 
-    // Stop whatever audio is currently active.
     private fun stopCurrentAudio() {
         tts?.stop()
         mediaPlayer?.apply {
@@ -184,17 +170,10 @@ class LearnFragment : Fragment() {
         mediaPlayer = null
     }
 
-    // Entry point for all audio playback.
-    //
-    // Priority:
-    //  1. Bundled raw resource MP3 (pre-generated at build time via
-    //     `./gradlew generateAudio`) — zero network, zero API key required.
-    //  2. Android device TextToSpeech fallback.
     private fun speakSentence(sentence: String) {
         if (isMuted()) return
         stopCurrentAudio()
 
-        // 1. Try the bundled pre-generated MP3 for this vocabulary item.
         val vocabId = currentItem?.id
         if (vocabId != null) {
             val resId = resources.getIdentifier(vocabId, "raw", requireContext().packageName)
@@ -204,7 +183,6 @@ class LearnFragment : Fragment() {
             }
         }
 
-        // 2. Device TTS as fallback.
         speakWithTts(sentence)
     }
 
@@ -220,7 +198,6 @@ class LearnFragment : Fragment() {
                     start()
                 }
             } catch (e: Exception) {
-                // Bundled file unplayable — log and fall back to TTS.
                 android.util.Log.e("LearnFragment", "Failed to play raw resource $resId", e)
                 currentItem?.let { speakWithTts(it.sentence) }
             }
@@ -230,6 +207,17 @@ class LearnFragment : Fragment() {
     private fun speakWithTts(sentence: String) {
         if (ttsReady) {
             tts?.speak(sentence, TextToSpeech.QUEUE_FLUSH, null, "sentence_${System.currentTimeMillis()}")
+        }
+    }
+
+    /**
+     * Called when the user taps the main Chinese text area.
+     * Replays audio for LISTENING and READING_SENTENCE aspects; silent for READING.
+     */
+    private fun onChineseTextClicked() {
+        val card = currentAspectCard ?: return
+        if (card.aspect != SrsManager.AspectType.READING) {
+            speakSentence(card.item.sentence)
         }
     }
 
@@ -253,19 +241,27 @@ class LearnFragment : Fragment() {
 
         val allIds = allVocab.map { it.id }
 
-        // Promote NEW cards into empty active slots.
         srsManager.initializeActiveDeck(allIds, deckSize)
         activeDeckCount = srsManager.getActiveIds(allIds).size
 
         if (reviewAll) {
-            // Review all cards regardless of due date or status, in random order.
-            vocabList = allVocab.shuffled()
+            // Review all (vocab, aspect) combinations in random order.
+            vocabList = allVocab.flatMap { item ->
+                SrsManager.ALL_ASPECTS.map { aspect -> AspectCard(item, aspect) }
+            }.shuffled()
         } else {
-            // Normal mode: only show ACTIVE cards that are currently due.
+            // Normal mode: for each ACTIVE card, add one AspectCard per due aspect.
             val activeIds = srsManager.getActiveIds(allIds).toSet()
-            vocabList = allVocab
-                .filter { it.id in activeIds && srsManager.isDue(it.id) }
-                .shuffled()
+            val aspectCards = mutableListOf<AspectCard>()
+            for (item in allVocab) {
+                if (item.id !in activeIds) continue
+                for (aspect in SrsManager.ALL_ASPECTS) {
+                    if (srsManager.isAspectDue(item.id, aspect)) {
+                        aspectCards.add(AspectCard(item, aspect))
+                    }
+                }
+            }
+            vocabList = aspectCards.shuffled()
         }
 
         currentIndex = 0
@@ -304,8 +300,9 @@ class LearnFragment : Fragment() {
             showFinished()
             return
         }
-        currentItem = vocabList[currentIndex]
-        val item = currentItem ?: return
+        currentAspectCard = vocabList[currentIndex]
+        val card = currentAspectCard ?: return
+        val item = card.item
 
         binding.groupCard.visibility = View.VISIBLE
         binding.groupEmpty.visibility = View.GONE
@@ -318,29 +315,57 @@ class LearnFragment : Fragment() {
             vocabList.size,
             activeDeckCount
         )
-        binding.textLevelBadge.text = "HSK ${item.level}"
-        binding.textChinese.text = item.chinese
-        if (chineseTypefaces.isNotEmpty()) {
-            binding.textChinese.typeface = chineseTypefaces.random()
-        }
+
+        // Show level + aspect type in the badge.
+        val aspectLabel = getString(when (card.aspect) {
+            SrsManager.AspectType.READING          -> R.string.aspect_reading
+            SrsManager.AspectType.LISTENING        -> R.string.aspect_listening
+            SrsManager.AspectType.READING_SENTENCE -> R.string.aspect_sentence
+        })
+        binding.textLevelBadge.text = "HSK ${item.level}  $aspectLabel"
+
         binding.buttonShow.visibility = View.VISIBLE
         binding.buttonShow.isEnabled = true
-
         binding.groupAnswer.visibility = View.GONE
         binding.groupActions.visibility = View.GONE
 
         val correct = statsManager.getCorrect(item.id)
         val wrong = statsManager.getWrong(item.id)
         binding.textStats.text = "✓ $correct   ✗ $wrong"
+        binding.textNextReview.text = getString(
+            R.string.label_interval,
+            srsManager.formatAspectInterval(item.id, card.aspect)
+        )
 
-        binding.textNextReview.text =
-            getString(R.string.label_interval, srsManager.formatInterval(item.id))
-
-        speakSentence(item.sentence)
+        when (card.aspect) {
+            SrsManager.AspectType.READING -> {
+                // Show the Chinese word only — no audio.
+                binding.textChinese.text = item.chinese
+                binding.textChinese.setTextSize(TypedValue.COMPLEX_UNIT_SP, 96f)
+                if (chineseTypefaces.isNotEmpty()) {
+                    binding.textChinese.typeface = chineseTypefaces.random()
+                }
+            }
+            SrsManager.AspectType.LISTENING -> {
+                // Play the sentence audio; show a speaker icon as the prompt.
+                binding.textChinese.text = "🔊"
+                binding.textChinese.setTextSize(TypedValue.COMPLEX_UNIT_SP, 72f)
+                speakSentence(item.sentence)
+            }
+            SrsManager.AspectType.READING_SENTENCE -> {
+                // Show the Chinese sentence without pinyin — no audio.
+                binding.textChinese.text = item.sentence
+                binding.textChinese.setTextSize(TypedValue.COMPLEX_UNIT_SP, 24f)
+                if (chineseTypefaces.isNotEmpty()) {
+                    binding.textChinese.typeface = chineseTypefaces.random()
+                }
+            }
+        }
     }
 
     private fun revealAnswer() {
-        val item = currentItem ?: return
+        val card = currentAspectCard ?: return
+        val item = card.item
         binding.buttonShow.visibility = View.GONE
 
         binding.textEnglish.text = item.english
@@ -351,16 +376,24 @@ class LearnFragment : Fragment() {
 
         binding.groupAnswer.visibility = View.VISIBLE
         binding.groupActions.visibility = View.VISIBLE
+
+        // Play audio on reveal for READING_SENTENCE (as specified).
+        // LISTENING already played audio at the start; READING is intentionally silent.
+        if (card.aspect == SrsManager.AspectType.READING_SENTENCE) {
+            speakSentence(item.sentence)
+        }
     }
 
     private fun handleAnswer(correct: Boolean) {
-        val item = currentItem ?: return
+        val card = currentAspectCard ?: return
+        val item = card.item
+
         if (correct) {
             statsManager.incrementCorrect(item.id)
         } else {
             statsManager.incrementWrong(item.id)
         }
-        srsManager.recordAnswer(item.id, correct)
+        srsManager.recordAnswer(item.id, card.aspect, correct)
 
         if (correct && srsManager.shouldGraduate(item.id)) {
             val prefs = requireContext().getSharedPreferences("settings", Context.MODE_PRIVATE)
@@ -374,8 +407,10 @@ class LearnFragment : Fragment() {
         val c = statsManager.getCorrect(item.id)
         val w = statsManager.getWrong(item.id)
         binding.textStats.text = "✓ $c   ✗ $w"
-        binding.textNextReview.text =
-            getString(R.string.label_interval, srsManager.formatInterval(item.id))
+        binding.textNextReview.text = getString(
+            R.string.label_interval,
+            srsManager.formatAspectInterval(item.id, card.aspect)
+        )
 
         currentIndex++
         showCurrentWord()
