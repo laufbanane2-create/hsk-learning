@@ -38,6 +38,8 @@ class LearnFragment : Fragment() {
     private var allVocab: List<VocabItem> = emptyList()
     private var currentIndex = 0
     private var currentItem: VocabItem? = null
+    // Cached count of active cards; updated in loadVocab and after each graduation.
+    private var activeDeckCount = 0
 
     // Settings that were in effect the last time loadVocab() ran.
     // Used to avoid reshuffling the deck when the user simply switches away
@@ -85,7 +87,7 @@ class LearnFragment : Fragment() {
     // Only reload vocab when either:
     //  • it hasn't been loaded yet (fresh fragment after a tab switch), or
     //  • the user changed the HSK-level settings or active deck size while away.
-    // This prevents a new word from appearing whenever the user multi-tasks
+    // This prevents a new word from appearing whenever the user multitasks
     // to another app and returns.
     override fun onResume() {
         super.onResume()
@@ -253,6 +255,7 @@ class LearnFragment : Fragment() {
 
         // Promote NEW cards into empty active slots.
         srsManager.initializeActiveDeck(allIds, deckSize)
+        activeDeckCount = srsManager.getActiveIds(allIds).size
 
         if (reviewAll) {
             // Review all cards regardless of due date or status, in random order.
@@ -313,7 +316,7 @@ class LearnFragment : Fragment() {
             R.string.label_progress,
             currentIndex + 1,
             vocabList.size,
-            srsManager.getActiveIds(allVocab.map { it.id }).size
+            activeDeckCount
         )
         binding.textLevelBadge.text = "HSK ${item.level}"
         binding.textChinese.text = item.chinese
@@ -362,7 +365,9 @@ class LearnFragment : Fragment() {
         if (correct && srsManager.shouldGraduate(item.id)) {
             val prefs = requireContext().getSharedPreferences("settings", Context.MODE_PRIVATE)
             val deckSize = prefs.getInt("active_deck_size", DEFAULT_ACTIVE_DECK_SIZE)
-            srsManager.graduateCard(item.id, allVocab.map { it.id }, deckSize)
+            val allIds = allVocab.map { it.id }
+            srsManager.graduateCard(item.id, allIds, deckSize)
+            activeDeckCount = srsManager.getActiveIds(allIds).size
             Snackbar.make(binding.root, getString(R.string.word_graduated), Snackbar.LENGTH_SHORT).show()
         }
 
