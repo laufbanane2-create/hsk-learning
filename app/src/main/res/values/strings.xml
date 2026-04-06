@@ -45,4 +45,8 @@
     <string name="font_preview_loading">Loading font…</string>
     <string name="settings_deck_title">Active deck size</string>
     <string name="settings_deck_subtitle">Number of words you actively study at once. Master a word (3 correct in a row) to unlock the next one from the queue.</string>
+
+    <!-- Statistics section -->
+    <string name="settings_stats_title">Word progress</string>
+    <string name="stats_category_line">%1$s  —  %2$d new · %3$d active · %4$d graduated  (total: %5$d)</string>
 </resources>
