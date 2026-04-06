@@ -1,5 +1,6 @@
 package com.laufbanane2.hsklearning
 
+import android.util.Log
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONObject
@@ -37,7 +38,8 @@ object UpdateChecker {
                 } ?: return null
 
             UpdateInfo(latestVersionCode, apkUrl)
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            Log.w("UpdateChecker", "Update check failed", e)
             null
         }
     }

@@ -1,5 +1,6 @@
 package com.laufbanane2.hsklearning
 
+import android.content.Context
 import android.os.Bundle
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -16,12 +17,16 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
 
+    companion object {
+        private const val UPDATE_CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000L // 24 hours
+        private const val KEY_LAST_UPDATE_CHECK = "last_update_check_ms"
+        private const val PREFS_SETTINGS = "settings"
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
-        checkForUpdate()
 
         if (savedInstanceState == null) {
             showLearnFragment()
@@ -46,6 +51,19 @@ class MainActivity : AppCompatActivity() {
         supportFragmentManager.beginTransaction()
             .replace(R.id.fragmentContainer, SettingsFragment())
             .commit()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        maybeCheckForUpdate()
+    }
+
+    private fun maybeCheckForUpdate() {
+        val prefs = getSharedPreferences(PREFS_SETTINGS, Context.MODE_PRIVATE)
+        val lastCheck = prefs.getLong(KEY_LAST_UPDATE_CHECK, 0L)
+        if (System.currentTimeMillis() - lastCheck < UPDATE_CHECK_INTERVAL_MS) return
+        prefs.edit().putLong(KEY_LAST_UPDATE_CHECK, System.currentTimeMillis()).apply()
+        checkForUpdate()
     }
 
     private fun checkForUpdate() {
