@@ -468,13 +468,13 @@ class LearnFragment : Fragment() {
      */
     private fun tryRestoreSession(hsk1: Boolean, hsk2: Boolean, deckSize: Int): Boolean {
         val sessionPrefs = requireContext().getSharedPreferences(SESSION_PREFS, Context.MODE_PRIVATE)
+        val encoded = sessionPrefs.getString(KEY_SESSION_CARDS, null) ?: return false
+        val savedIndex = sessionPrefs.getInt(KEY_SESSION_INDEX, 0)
         if (sessionPrefs.getBoolean(KEY_SESSION_HSK1, !hsk1) != hsk1 ||
             sessionPrefs.getBoolean(KEY_SESSION_HSK2, !hsk2) != hsk2 ||
             sessionPrefs.getInt(KEY_SESSION_DECK_SIZE, -1) != deckSize) {
             return false
         }
-        val encoded = sessionPrefs.getString(KEY_SESSION_CARDS, null) ?: return false
-        val savedIndex = sessionPrefs.getInt(KEY_SESSION_INDEX, 0)
 
         val vocab = VocabData.getVocab(hsk1, hsk2)
         if (vocab.isEmpty()) return false
@@ -486,8 +486,9 @@ class LearnFragment : Fragment() {
             encoded.split(",").mapNotNull { part ->
                 val colonIdx = part.indexOf(':')
                 if (colonIdx < 0) return@mapNotNull null
-                val item = vocabMap[part.substring(0, colonIdx)] ?: return@mapNotNull null
-                val aspect = aspectMap[part.substring(colonIdx + 1)] ?: return@mapNotNull null
+                val parts = part.split(":", limit = 2)
+                val item = vocabMap[parts[0]] ?: return@mapNotNull null
+                val aspect = aspectMap[parts[1]] ?: return@mapNotNull null
                 AspectCard(item, aspect)
             }
         } catch (e: Exception) {
