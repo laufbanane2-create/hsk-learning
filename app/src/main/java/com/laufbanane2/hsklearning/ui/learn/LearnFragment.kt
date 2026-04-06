@@ -62,6 +62,13 @@ class LearnFragment : Fragment() {
         private const val TEXT_SIZE_WORD_SP = 96f
         private const val TEXT_SIZE_LISTEN_SP = 72f
         private const val TEXT_SIZE_SENTENCE_SP = 24f
+
+        private const val SESSION_PREFS = "session_state"
+        private const val KEY_SESSION_CARDS = "session_cards"
+        private const val KEY_SESSION_INDEX = "session_index"
+        private const val KEY_SESSION_HSK1 = "session_hsk1"
+        private const val KEY_SESSION_HSK2 = "session_hsk2"
+        private const val KEY_SESSION_DECK_SIZE = "session_deck_size"
     }
 
     // All vocab IDs for the currently loaded vocabulary set; kept in sync with allVocab.
@@ -99,7 +106,9 @@ class LearnFragment : Fragment() {
         val hsk2 = prefs.getBoolean("hsk2_enabled", false)
         val deckSize = prefs.getInt("active_deck_size", DEFAULT_ACTIVE_DECK_SIZE)
         if (!vocabLoaded || hsk1 != loadedHsk1 || hsk2 != loadedHsk2 || deckSize != loadedDeckSize) {
-            loadVocab()
+            if (!tryRestoreSession(hsk1, hsk2, deckSize)) {
+                loadVocab()
+            }
         }
         loadChineseFonts()
     }
@@ -244,6 +253,8 @@ class LearnFragment : Fragment() {
 
         if (allVocab.isEmpty()) {
             vocabList = emptyList()
+            currentIndex = 0
+            saveSession()
             showEmptyState()
             return
         }
@@ -274,6 +285,7 @@ class LearnFragment : Fragment() {
         }
 
         currentIndex = 0
+        saveSession()
 
         if (vocabList.isEmpty()) {
             showNoDueState(srsManager.getActiveIds(allIds))
@@ -424,6 +436,7 @@ class LearnFragment : Fragment() {
         )
 
         currentIndex++
+        saveSession()
         showCurrentWord()
     }
 
@@ -432,6 +445,70 @@ class LearnFragment : Fragment() {
         binding.groupEmpty.visibility = View.GONE
         binding.groupFinished.visibility = View.VISIBLE
         binding.groupNoDue.visibility = View.GONE
+    }
+
+    /**
+     * Persists the current session card list and index so it can be resumed after the app
+     * is killed and restarted.
+     */
+    private fun saveSession() {
+        val encoded = vocabList.joinToString(",") { "${it.item.id}:${it.aspect.key}" }
+        requireContext().getSharedPreferences(SESSION_PREFS, Context.MODE_PRIVATE).edit()
+            .putString(KEY_SESSION_CARDS, encoded)
+            .putInt(KEY_SESSION_INDEX, currentIndex)
+            .putBoolean(KEY_SESSION_HSK1, loadedHsk1)
+            .putBoolean(KEY_SESSION_HSK2, loadedHsk2)
+            .putInt(KEY_SESSION_DECK_SIZE, loadedDeckSize)
+            .apply()
+    }
+
+    /**
+     * Attempts to restore a previously saved session that matches the given settings.
+     * Returns true (and calls [showCurrentWord]) if restoration succeeded, false otherwise.
+     */
+    private fun tryRestoreSession(hsk1: Boolean, hsk2: Boolean, deckSize: Int): Boolean {
+        val sessionPrefs = requireContext().getSharedPreferences(SESSION_PREFS, Context.MODE_PRIVATE)
+        val encoded = sessionPrefs.getString(KEY_SESSION_CARDS, null) ?: return false
+        val savedIndex = sessionPrefs.getInt(KEY_SESSION_INDEX, 0)
+        if (sessionPrefs.getBoolean(KEY_SESSION_HSK1, !hsk1) != hsk1 ||
+            sessionPrefs.getBoolean(KEY_SESSION_HSK2, !hsk2) != hsk2 ||
+            sessionPrefs.getInt(KEY_SESSION_DECK_SIZE, -1) != deckSize) {
+            return false
+        }
+
+        val vocab = VocabData.getVocab(hsk1, hsk2)
+        if (vocab.isEmpty()) return false
+
+        val vocabMap = vocab.associateBy { it.id }
+        val aspectMap = SrsManager.AspectType.values().associateBy { it.key }
+
+        val cards = try {
+            encoded.split(",").mapNotNull { part ->
+                val colonIdx = part.indexOf(':')
+                if (colonIdx < 0) return@mapNotNull null
+                val parts = part.split(":", limit = 2)
+                val item = vocabMap[parts[0]] ?: return@mapNotNull null
+                val aspect = aspectMap[parts[1]] ?: return@mapNotNull null
+                AspectCard(item, aspect)
+            }
+        } catch (e: Exception) {
+            return false
+        }
+
+        if (cards.isEmpty() || savedIndex >= cards.size) return false
+
+        allVocab = vocab
+        allVocabIds = vocab.map { it.id }
+        loadedHsk1 = hsk1
+        loadedHsk2 = hsk2
+        loadedDeckSize = deckSize
+        vocabLoaded = true
+        srsManager.initializeActiveDeck(allVocabIds, deckSize)
+        activeDeckCount = srsManager.getActiveIds(allVocabIds).size
+        vocabList = cards
+        currentIndex = savedIndex
+        showCurrentWord()
+        return true
     }
 
     override fun onDestroyView() {
