@@ -66,18 +66,31 @@ class SrsManager(context: Context) {
         allIds.filter { getCardStatus(it) == CardStatus.ACTIVE }
 
     /**
-     * Ensures the active deck has [deckSize] cards by promoting NEW cards into
-     * empty slots. Already-ACTIVE and GRADUATED cards are left untouched.
-     * Safe to call every time a session loads — it only fills empty slots.
+     * Ensures the active deck has exactly [deckSize] cards.
+     * - If there are fewer ACTIVE cards than [deckSize], promotes NEW cards to fill slots.
+     * - If there are more ACTIVE cards than [deckSize] (e.g. the user lowered the setting),
+     *   demotes the excess back to NEW, preferring cards with the least study progress.
+     * GRADUATED cards are never touched.
      */
     fun initializeActiveDeck(allIds: List<String>, deckSize: Int) {
-        val currentActiveCount = allIds.count { getCardStatus(it) == CardStatus.ACTIVE }
-        val slotsToFill = (deckSize - currentActiveCount).coerceAtLeast(0)
-        if (slotsToFill > 0) {
-            allIds
-                .filter { getCardStatus(it) == CardStatus.NEW }
-                .take(slotsToFill)
-                .forEach { setCardStatus(it, CardStatus.ACTIVE) }
+        val activeIds = allIds.filter { getCardStatus(it) == CardStatus.ACTIVE }
+        val currentActiveCount = activeIds.size
+
+        if (currentActiveCount > deckSize) {
+            // Demote excess cards; prefer those with the least total reps (least studied).
+            val excess = currentActiveCount - deckSize
+            activeIds
+                .sortedBy { id -> ALL_ASPECTS.sumOf { aspect -> prefs.getInt(repsKey(id, aspect), 0) } }
+                .take(excess)
+                .forEach { setCardStatus(it, CardStatus.NEW) }
+        } else {
+            val slotsToFill = deckSize - currentActiveCount
+            if (slotsToFill > 0) {
+                allIds
+                    .filter { getCardStatus(it) == CardStatus.NEW }
+                    .take(slotsToFill)
+                    .forEach { setCardStatus(it, CardStatus.ACTIVE) }
+            }
         }
     }
 

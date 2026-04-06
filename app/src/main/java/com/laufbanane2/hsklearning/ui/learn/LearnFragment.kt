@@ -42,6 +42,7 @@ class LearnFragment : Fragment() {
     private var allVocab: List<VocabItem> = emptyList()
     private var currentIndex = 0
     private var currentAspectCard: AspectCard? = null
+    private var answerRevealed = false
     // Convenience accessor used by speakSentence() to look up the raw audio resource.
     private val currentItem: VocabItem? get() = currentAspectCard?.item
     // Cached count of active cards; updated in loadVocab and after each graduation.
@@ -218,11 +219,12 @@ class LearnFragment : Fragment() {
 
     /**
      * Called when the user taps the main Chinese text area.
-     * Replays audio for LISTENING and READING_SENTENCE aspects; silent for READING.
+     * Always plays audio for LISTENING and READING_SENTENCE aspects.
+     * For READING, plays audio only after the answer has been revealed.
      */
     private fun onChineseTextClicked() {
         val card = currentAspectCard ?: return
-        if (card.aspect != SrsManager.AspectType.READING) {
+        if (card.aspect != SrsManager.AspectType.READING || answerRevealed) {
             speakSentence(card.item.sentence)
         }
     }
@@ -335,6 +337,7 @@ class LearnFragment : Fragment() {
         binding.buttonShow.isEnabled = true
         binding.groupAnswer.visibility = View.GONE
         binding.groupActions.visibility = View.GONE
+        answerRevealed = false
 
         val correct = statsManager.getCorrect(item.id)
         val wrong = statsManager.getWrong(item.id)
@@ -383,6 +386,7 @@ class LearnFragment : Fragment() {
 
         binding.groupAnswer.visibility = View.VISIBLE
         binding.groupActions.visibility = View.VISIBLE
+        answerRevealed = true
 
         // Play audio on reveal for READING and READING_SENTENCE.
         // LISTENING already played audio at the start of the card.
