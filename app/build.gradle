@@ -12,7 +12,12 @@ android {
         minSdk 24
         targetSdk 34
         versionCode project.findProperty('versionCode')?.toInteger() ?: 2
-        versionName "1.1"
+        versionName project.findProperty('versionCode') ?: "dev"
+
+        def gitBranch = project.findProperty('gitBranch') ?: "local"
+        def gitCommit = project.findProperty('gitCommit') ?: "unknown"
+        buildConfigField "String", "GIT_BRANCH", "\"${gitBranch}\""
+        buildConfigField "String", "GIT_COMMIT", "\"${gitCommit}\""
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -51,6 +56,7 @@ android {
 
     buildFeatures {
         viewBinding true
+        buildConfig true
     }
 }
 

@@ -16,6 +16,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.core.provider.FontRequest
 import androidx.core.provider.FontsContractCompat
 import androidx.fragment.app.Fragment
+import com.laufbanane2.hsklearning.BuildConfig
 import com.laufbanane2.hsklearning.R
 import com.laufbanane2.hsklearning.data.ChineseFont
 import com.laufbanane2.hsklearning.data.ChineseFonts
@@ -136,6 +137,9 @@ class SettingsFragment : Fragment() {
             row.addView(label)
             binding.groupFontCheckboxes.addView(row)
         }
+
+        binding.textBuildInfo.text =
+            "v${BuildConfig.VERSION_NAME} · ${BuildConfig.GIT_BRANCH} · ${BuildConfig.GIT_COMMIT}"
     }
 
     private fun showFontPreview(font: ChineseFont) {
