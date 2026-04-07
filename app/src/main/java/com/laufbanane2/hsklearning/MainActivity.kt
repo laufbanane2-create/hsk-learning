@@ -2,6 +2,7 @@ package com.laufbanane2.hsklearning
 
 import android.content.Context
 import android.os.Bundle
+import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.pm.PackageInfoCompat
@@ -67,21 +68,31 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun checkForUpdate() {
+        runUpdateCheck(showNoUpdateFeedback = false)
+    }
+
+    internal fun checkForUpdateManually() {
+        runUpdateCheck(showNoUpdateFeedback = true)
+    }
+
+    private fun runUpdateCheck(showNoUpdateFeedback: Boolean) {
         val pkgInfo = packageManager.getPackageInfo(packageName, 0)
         val currentVersionCode = PackageInfoCompat.getLongVersionCode(pkgInfo).toInt()
         lifecycleScope.launch(Dispatchers.IO) {
             val updateInfo = UpdateChecker.check(currentVersionCode)
-            if (updateInfo != null) {
-                withContext(Dispatchers.Main) {
-                    if (!isFinishing && !isDestroyed) {
+            withContext(Dispatchers.Main) {
+                if (!isFinishing && !isDestroyed) {
+                    if (updateInfo != null) {
                         AlertDialog.Builder(this@MainActivity)
-                            .setTitle("Update available")
-                            .setMessage("A new version is available. Would you like to update now?")
-                            .setPositiveButton("Update") { _, _ ->
+                            .setTitle(getString(R.string.update_available_title))
+                            .setMessage(getString(R.string.update_available_message))
+                            .setPositiveButton(getString(R.string.update_action_now)) { _, _ ->
                                 UpdateInstaller.downloadAndInstall(this@MainActivity, updateInfo.apkUrl)
                             }
-                            .setNegativeButton("Later", null)
+                            .setNegativeButton(getString(R.string.update_action_later), null)
                             .show()
+                    } else if (showNoUpdateFeedback) {
+                        Toast.makeText(this@MainActivity, getString(R.string.update_up_to_date), Toast.LENGTH_SHORT).show()
                     }
                 }
             }

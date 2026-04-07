@@ -188,7 +188,31 @@
             android:layout_height="wrap_content"
             android:textSize="12sp"
             android:textColor="?android:attr/textColorSecondary"
-            android:textIsSelectable="true" />
+            android:textIsSelectable="true"
+            android:layout_marginBottom="16dp" />
+
+        <!-- Divider -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="?android:attr/listDivider"
+            android:layout_marginBottom="24dp" />
+
+        <!-- Update section -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/settings_update_title"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="12dp" />
+
+        <Button
+            android:id="@+id/buttonCheckUpdates"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/button_check_updates"
+            android:layout_marginBottom="8dp" />
 
     </LinearLayout>
 </ScrollView>

@@ -49,4 +49,14 @@
     <!-- Statistics section -->
     <string name="settings_stats_title">Word progress</string>
     <string name="stats_category_line">%1$s  —  %2$d new · %3$d active · %4$d graduated  (total: %5$d)</string>
+
+    <!-- Update section -->
+    <string name="settings_update_title">App update</string>
+    <string name="button_check_updates">Check for updates</string>
+    <string name="update_checking">Checking for updates…</string>
+    <string name="update_up_to_date">You\'re up to date.</string>
+    <string name="update_available_title">Update available</string>
+    <string name="update_available_message">A new version is available. Would you like to update now?</string>
+    <string name="update_action_now">Update</string>
+    <string name="update_action_later">Later</string>
 </resources>

@@ -143,6 +143,11 @@ class SettingsFragment : Fragment() {
 
         binding.textBuildInfo.text =
             "v${BuildConfig.VERSION_NAME} · ${BuildConfig.GIT_BRANCH} · ${BuildConfig.GIT_COMMIT}"
+
+        binding.buttonCheckUpdates.setOnClickListener {
+            Toast.makeText(requireContext(), getString(R.string.update_checking), Toast.LENGTH_SHORT).show()
+            (activity as? com.laufbanane2.hsklearning.MainActivity)?.checkForUpdateManually()
+        }
     }
 
     private fun showFontPreview(font: ChineseFont) {
