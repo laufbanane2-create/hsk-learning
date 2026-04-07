@@ -20,6 +20,7 @@ import com.laufbanane2.hsklearning.BuildConfig
 import com.laufbanane2.hsklearning.R
 import com.laufbanane2.hsklearning.data.ChineseFont
 import com.laufbanane2.hsklearning.data.ChineseFonts
+import com.laufbanane2.hsklearning.data.SrsManager
 import com.laufbanane2.hsklearning.data.VocabData
 import com.laufbanane2.hsklearning.databinding.FragmentSettingsBinding
 
@@ -27,12 +28,14 @@ class SettingsFragment : Fragment() {
 
     private var _binding: FragmentSettingsBinding? = null
     private val binding get() = _binding!!
+    private lateinit var srsManager: SrsManager
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
         _binding = FragmentSettingsBinding.inflate(inflater, container, false)
+        srsManager = SrsManager(requireContext())
         return binding.root
     }
 
@@ -187,6 +190,48 @@ class SettingsFragment : Fragment() {
             },
             handler
         )
+    }
+
+    override fun onResume() {
+        super.onResume()
+        refreshStats()
+    }
+
+    private fun refreshStats() {
+        val density = resources.displayMetrics.density
+        val container = binding.groupStats
+        container.removeAllViews()
+
+        val categories = listOf(
+            getString(R.string.hsk1_label, VocabData.hsk1.size) to VocabData.hsk1,
+            getString(R.string.hsk2_label, VocabData.hsk2.size) to VocabData.hsk2
+        )
+
+        categories.forEach { (label, vocab) ->
+            var newCount = 0
+            var activeCount = 0
+            var graduatedCount = 0
+            vocab.forEach { item ->
+                when (srsManager.getCardStatus(item.id)) {
+                    SrsManager.CardStatus.NEW       -> newCount++
+                    SrsManager.CardStatus.ACTIVE    -> activeCount++
+                    SrsManager.CardStatus.GRADUATED -> graduatedCount++
+                }
+            }
+            val line = getString(
+                R.string.stats_category_line,
+                label, newCount, activeCount, graduatedCount, vocab.size
+            )
+            val tv = TextView(requireContext()).apply {
+                text = line
+                textSize = 14f
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).also { it.bottomMargin = (8 * density).toInt() }
+            }
+            container.addView(tv)
+        }
     }
 
     override fun onDestroyView() {
