@@ -3,31 +3,38 @@ package com.laufbanane2.hsklearning.data
 import android.content.Context
 
 /**
- * Spaced-repetition scheduler (SM-2 inspired).
+ * Spaced-repetition scheduler using fixed levels (1–6).
  *
  * Each vocabulary card has three independently-scheduled aspects:
  *  - READING        – recognise the Chinese word (no audio)
  *  - LISTENING      – translate the spoken sentence (audio only)
  *  - READING_SENTENCE – translate the written Chinese sentence (no pinyin)
  *
- * Each aspect tracks its own interval, nextReview, repetitions, and ease.
- * A card graduates (ACTIVE → GRADUATED) only once ALL three aspects have
- * been mastered ([GRADUATION_THRESHOLD] consecutive correct answers each).
+ * Each aspect progresses through 6 levels independently:
+ *  Level 0 (new): not yet studied; always due.
+ *  Level 1:  1 day
+ *  Level 2:  2 days
+ *  Level 3:  4 days
+ *  Level 4:  8 days
+ *  Level 5: 16 days
+ *  Level 6: mature (32 days); no longer shown for review.
  *
- * Correct answer → interval grows (× easeFactor), ease increases slightly.
- * Wrong answer   → interval resets to 1 minute, ease decreases slightly.
+ * Correct answer → aspect level +1.
+ * Wrong answer   → aspect level resets to 1.
  *
- * Active/passive deck:
- *  Only ACTIVE cards are shown during normal study. A card is promoted from
- *  NEW to ACTIVE when an empty slot in the active deck is available.
- *  The deck stays full by immediately promoting the next NEW card after a
- *  graduation.
+ * A card becomes MATURE (IN_PROGRESS → MATURE) once ALL three aspects reach level 6.
+ *
+ * Active/in-progress deck:
+ *  Only IN_PROGRESS cards are shown during normal study. A card is promoted from
+ *  NEW to IN_PROGRESS when an empty slot in the active deck is available.
+ *  The deck stays full by immediately promoting the next NEW card after a card matures.
+ *  If the deck size is lowered, the least-progressed IN_PROGRESS cards are demoted to NEW.
  */
 class SrsManager(context: Context) {
 
     private val prefs = context.getSharedPreferences("srs_data", Context.MODE_PRIVATE)
 
-    enum class CardStatus { NEW, ACTIVE, GRADUATED }
+    enum class CardStatus { NEW, IN_PROGRESS, MATURE }
 
     /** The three independently-tracked study aspects for every vocabulary card. */
     enum class AspectType(val key: String) {
@@ -37,14 +44,21 @@ class SrsManager(context: Context) {
     }
 
     companion object {
-        private const val DEFAULT_EASE = 2.5f
-        private const val MIN_EASE = 1.3f
-        private const val MAX_EASE = 5.0f
-        private const val MIN_INTERVAL_MS = 60_000L          // 1 minute
-        private const val FIRST_CORRECT_MS = 60_000L         // 1 minute
-        private const val SECOND_CORRECT_MS = 600_000L       // 10 minutes
-        /** Consecutive correct answers required to graduate one aspect. */
-        const val GRADUATION_THRESHOLD = 3
+        /**
+         * Review intervals in milliseconds indexed by level.
+         * Level 0 is the "new" state (never studied); its interval is unused since level-0
+         * aspects are always considered due.
+         */
+        val LEVEL_INTERVALS_MS = longArrayOf(
+            0L,             // Level 0: new (always due)
+            86_400_000L,    // Level 1:  1 day
+            172_800_000L,   // Level 2:  2 days
+            345_600_000L,   // Level 3:  4 days
+            691_200_000L,   // Level 4:  8 days
+            1_382_400_000L, // Level 5: 16 days
+            2_764_800_000L  // Level 6: mature (32 days, not reviewed)
+        )
+        const val MATURE_LEVEL = 6
         val ALL_ASPECTS: List<AspectType> = AspectType.values().toList()
     }
 
@@ -52,35 +66,40 @@ class SrsManager(context: Context) {
 
     fun getCardStatus(vocabId: String): CardStatus =
         when (prefs.getString("${vocabId}_status", "new")) {
-            "active"    -> CardStatus.ACTIVE
-            "graduated" -> CardStatus.GRADUATED
-            else        -> CardStatus.NEW
+            "in_progress", "active" -> CardStatus.IN_PROGRESS
+            "mature", "graduated"   -> CardStatus.MATURE
+            else                    -> CardStatus.NEW
         }
 
     private fun setCardStatus(vocabId: String, status: CardStatus) {
-        prefs.edit().putString("${vocabId}_status", status.name.lowercase()).apply()
+        val str = when (status) {
+            CardStatus.NEW         -> "new"
+            CardStatus.IN_PROGRESS -> "in_progress"
+            CardStatus.MATURE      -> "mature"
+        }
+        prefs.edit().putString("${vocabId}_status", str).apply()
     }
 
-    /** Returns all IDs from [allIds] whose status is [CardStatus.ACTIVE]. */
+    /** Returns all IDs from [allIds] whose status is [CardStatus.IN_PROGRESS]. */
     fun getActiveIds(allIds: List<String>): List<String> =
-        allIds.filter { getCardStatus(it) == CardStatus.ACTIVE }
+        allIds.filter { getCardStatus(it) == CardStatus.IN_PROGRESS }
 
     /**
      * Ensures the active deck has exactly [deckSize] cards.
-     * - If there are fewer ACTIVE cards than [deckSize], promotes NEW cards to fill slots.
-     * - If there are more ACTIVE cards than [deckSize] (e.g. the user lowered the setting),
-     *   demotes the excess back to NEW, preferring cards with the least study progress.
-     * GRADUATED cards are never touched.
+     * - If there are fewer IN_PROGRESS cards than [deckSize], promotes NEW cards to fill slots.
+     * - If there are more IN_PROGRESS cards than [deckSize] (e.g. the user lowered the setting),
+     *   demotes the excess back to NEW, preferring cards with the least total level progress.
+     * MATURE cards are never touched.
      */
     fun initializeActiveDeck(allIds: List<String>, deckSize: Int) {
-        val activeIds = allIds.filter { getCardStatus(it) == CardStatus.ACTIVE }
+        val activeIds = allIds.filter { getCardStatus(it) == CardStatus.IN_PROGRESS }
         val currentActiveCount = activeIds.size
 
         if (currentActiveCount > deckSize) {
-            // Demote excess cards; prefer those with the least total reps (least studied).
+            // Demote excess cards; prefer those with the least total level progress.
             val excess = currentActiveCount - deckSize
             activeIds
-                .sortedBy { id -> ALL_ASPECTS.sumOf { aspect -> prefs.getInt(repsKey(id, aspect), 0) } }
+                .sortedBy { id -> ALL_ASPECTS.sumOf { aspect -> getAspectLevel(id, aspect) } }
                 .take(excess)
                 .forEach { setCardStatus(it, CardStatus.NEW) }
         } else {
@@ -89,53 +108,59 @@ class SrsManager(context: Context) {
                 allIds
                     .filter { getCardStatus(it) == CardStatus.NEW }
                     .take(slotsToFill)
-                    .forEach { setCardStatus(it, CardStatus.ACTIVE) }
+                    .forEach { setCardStatus(it, CardStatus.IN_PROGRESS) }
             }
         }
     }
 
     /**
-     * Returns true when ALL three aspects of [vocabId] have been mastered
-     * ([GRADUATION_THRESHOLD] consecutive correct answers each).
+     * Returns true when ALL three aspects of [vocabId] have reached [MATURE_LEVEL].
      */
-    fun shouldGraduate(vocabId: String): Boolean =
-        ALL_ASPECTS.all { isAspectGraduated(vocabId, it) }
+    fun shouldMature(vocabId: String): Boolean =
+        ALL_ASPECTS.all { isAspectMature(vocabId, it) }
 
     /**
-     * Graduates [vocabId] (ACTIVE → GRADUATED) and immediately promotes the
+     * Matures [vocabId] (IN_PROGRESS → MATURE) and immediately promotes the
      * next NEW card from [allIds] so the active deck stays full.
      */
-    fun graduateCard(vocabId: String, allIds: List<String>, deckSize: Int) {
-        setCardStatus(vocabId, CardStatus.GRADUATED)
-        val currentActiveCount = allIds.count { getCardStatus(it) == CardStatus.ACTIVE }
+    fun matureCard(vocabId: String, allIds: List<String>, deckSize: Int) {
+        setCardStatus(vocabId, CardStatus.MATURE)
+        val currentActiveCount = allIds.count { getCardStatus(it) == CardStatus.IN_PROGRESS }
         if (currentActiveCount < deckSize) {
             allIds.firstOrNull { getCardStatus(it) == CardStatus.NEW }
-                ?.let { setCardStatus(it, CardStatus.ACTIVE) }
+                ?.let { setCardStatus(it, CardStatus.IN_PROGRESS) }
         }
     }
 
     // ── Aspect-specific storage keys ──────────────────────────────────────────
 
-    private fun repsKey(vocabId: String, aspect: AspectType) = "${vocabId}_${aspect.key}_reps"
-    private fun intervalKey(vocabId: String, aspect: AspectType) = "${vocabId}_${aspect.key}_interval"
+    private fun levelKey(vocabId: String, aspect: AspectType) = "${vocabId}_${aspect.key}_level"
     private fun nextReviewKey(vocabId: String, aspect: AspectType) = "${vocabId}_${aspect.key}_next_review"
-    private fun easeKey(vocabId: String, aspect: AspectType) = "${vocabId}_${aspect.key}_ease"
 
     // ── Aspect-specific queries ───────────────────────────────────────────────
 
-    fun getAspectIntervalMs(vocabId: String, aspect: AspectType): Long =
-        prefs.getLong(intervalKey(vocabId, aspect), 0L)
+    /** Returns the current SRS level (0–6) for the given aspect. */
+    fun getAspectLevel(vocabId: String, aspect: AspectType): Int =
+        prefs.getInt(levelKey(vocabId, aspect), 0)
 
     fun getAspectNextReviewMs(vocabId: String, aspect: AspectType): Long =
         prefs.getLong(nextReviewKey(vocabId, aspect), 0L)
 
-    /** True when this aspect has never been answered or its due timestamp has passed. */
-    fun isAspectDue(vocabId: String, aspect: AspectType): Boolean =
-        getAspectNextReviewMs(vocabId, aspect) <= System.currentTimeMillis()
+    /** True when this aspect has reached [MATURE_LEVEL] and should no longer be reviewed. */
+    fun isAspectMature(vocabId: String, aspect: AspectType): Boolean =
+        getAspectLevel(vocabId, aspect) >= MATURE_LEVEL
 
-    /** True when this aspect has reached [GRADUATION_THRESHOLD] consecutive correct answers. */
-    fun isAspectGraduated(vocabId: String, aspect: AspectType): Boolean =
-        prefs.getInt(repsKey(vocabId, aspect), 0) >= GRADUATION_THRESHOLD
+    /**
+     * True when this aspect is due for review.
+     * Level-0 aspects are always due; mature aspects are never due;
+     * all others are due when their next-review timestamp has passed.
+     */
+    fun isAspectDue(vocabId: String, aspect: AspectType): Boolean {
+        val level = getAspectLevel(vocabId, aspect)
+        if (level >= MATURE_LEVEL) return false
+        if (level == 0) return true
+        return getAspectNextReviewMs(vocabId, aspect) <= System.currentTimeMillis()
+    }
 
     /**
      * True when the card has at least one aspect that is currently due.
@@ -146,12 +171,16 @@ class SrsManager(context: Context) {
 
     /**
      * Returns the earliest future due-timestamp across all [vocabIds] and all
-     * aspects, or null if every (vocab, aspect) pair is already due.
+     * non-mature aspects, or null if every due aspect is already past due.
      */
     fun nextDueAfterNow(vocabIds: List<String>): Long? {
         val now = System.currentTimeMillis()
         return vocabIds
-            .flatMap { id -> ALL_ASPECTS.map { getAspectNextReviewMs(id, it) } }
+            .flatMap { id ->
+                ALL_ASPECTS
+                    .filter { aspect -> !isAspectMature(id, aspect) }
+                    .map { aspect -> getAspectNextReviewMs(id, aspect) }
+            }
             .filter { it > now }
             .minOrNull()
     }
@@ -160,42 +189,27 @@ class SrsManager(context: Context) {
 
     fun recordAnswer(vocabId: String, aspect: AspectType, correct: Boolean) {
         val now = System.currentTimeMillis()
-        val intervalMs = getAspectIntervalMs(vocabId, aspect)
-        val reps = prefs.getInt(repsKey(vocabId, aspect), 0)
-        val ease = prefs.getFloat(easeKey(vocabId, aspect), DEFAULT_EASE)
+        val level = getAspectLevel(vocabId, aspect)
 
-        val newIntervalMs: Long
-        val newReps: Int
-        val newEase: Float
-
-        if (correct) {
-            newReps = reps + 1
-            newEase = (ease + 0.1f).coerceAtMost(MAX_EASE)
-            newIntervalMs = when (reps) {
-                0 -> FIRST_CORRECT_MS
-                1 -> SECOND_CORRECT_MS
-                else -> (intervalMs * ease).toLong().coerceAtLeast(MIN_INTERVAL_MS)
-            }
-        } else {
-            newReps = 0
-            newEase = (ease - 0.2f).coerceAtLeast(MIN_EASE)
-            newIntervalMs = MIN_INTERVAL_MS
-        }
+        val newLevel = if (correct) (level + 1).coerceAtMost(MATURE_LEVEL) else 1
+        val newNextReview = now + LEVEL_INTERVALS_MS[newLevel]
 
         prefs.edit()
-            .putLong(intervalKey(vocabId, aspect), newIntervalMs)
-            .putLong(nextReviewKey(vocabId, aspect), now + newIntervalMs)
-            .putInt(repsKey(vocabId, aspect), newReps)
-            .putFloat(easeKey(vocabId, aspect), newEase)
+            .putInt(levelKey(vocabId, aspect), newLevel)
+            .putLong(nextReviewKey(vocabId, aspect), newNextReview)
             .apply()
     }
 
     // ── Formatting helpers ────────────────────────────────────────────────────
 
-    /** Human-readable interval for a specific aspect (e.g. "New", "5m", "2h 10m"). */
-    fun formatAspectInterval(vocabId: String, aspect: AspectType): String {
-        val ms = getAspectIntervalMs(vocabId, aspect)
-        return if (ms == 0L) "New" else formatMs(ms)
+    /** Human-readable level label for a specific aspect (e.g. "New", "Level 3", "Mature"). */
+    fun formatAspectLevel(vocabId: String, aspect: AspectType): String {
+        val level = getAspectLevel(vocabId, aspect)
+        return when {
+            level == 0            -> "New"
+            level >= MATURE_LEVEL -> "Mature"
+            else                  -> "Level $level"
+        }
     }
 
     fun formatMs(ms: Long): String {
