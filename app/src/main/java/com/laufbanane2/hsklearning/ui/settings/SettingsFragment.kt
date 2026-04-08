@@ -208,13 +208,11 @@ class SettingsFragment : Fragment() {
         container.removeAllViews()
 
         val categories = listOf(
-            getString(R.string.hsk1_label, VocabData.hsk1.size) to VocabData.hsk1,
-            getString(R.string.hsk2_label, VocabData.hsk2.size) to VocabData.hsk2
+            Triple(getString(R.string.hsk1_label, VocabData.hsk1.size), VocabData.hsk1, binding.pieChartHsk1),
+            Triple(getString(R.string.hsk2_label, VocabData.hsk2.size), VocabData.hsk2, binding.pieChartHsk2)
         )
 
-        val ringData = mutableListOf<PieChartView.RingData>()
-
-        categories.forEach { (label, vocab) ->
+        categories.forEach { (label, vocab, chart) ->
             var newCount = 0
             var activeCount = 0
             var graduatedCount = 0
@@ -225,7 +223,7 @@ class SettingsFragment : Fragment() {
                     SrsManager.CardStatus.MATURE      -> graduatedCount++
                 }
             }
-            ringData += PieChartView.RingData(label, newCount, activeCount, graduatedCount)
+            chart.setData(PieChartView.SliceData(label, newCount, activeCount, graduatedCount))
             val line = getString(
                 R.string.stats_category_line,
                 label, newCount, activeCount, graduatedCount, vocab.size
@@ -240,8 +238,6 @@ class SettingsFragment : Fragment() {
             }
             container.addView(tv)
         }
-
-        binding.pieChartProgress.setRings(ringData)
     }
 
     override fun onDestroyView() {

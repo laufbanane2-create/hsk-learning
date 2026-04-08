@@ -9,15 +9,15 @@ import android.util.AttributeSet
 import android.view.View
 
 /**
- * Draws a cascaded (concentric-ring) pie chart.
+ * Draws a single standard pie chart (filled wedges) for one HSK category.
  *
- * Each [RingData] entry becomes one ring, drawn from outermost (index 0) to
- * innermost (last index).  Every ring is divided into three arc segments:
- *   - NEW        → grey
- *   - IN_PROGRESS → amber
- *   - MATURE     → green
+ * Three segments:
+ *   - NEW        → grey   (#9E9E9E)
+ *   - IN_PROGRESS → amber  (#FFA726)
+ *   - MATURE     → green  (#4CAF50)
  *
- * A legend row is rendered below the chart.
+ * A title label is drawn centred below the pie, followed by a compact legend.
+ * Call [setData] to populate the chart; the view re-draws itself automatically.
  */
 class PieChartView @JvmOverloads constructor(
     context: Context,
@@ -25,134 +25,108 @@ class PieChartView @JvmOverloads constructor(
     defStyle: Int = 0
 ) : View(context, attrs, defStyle) {
 
-    data class RingData(
+    data class SliceData(
         val label: String,
         val newCount: Int,
         val inProgressCount: Int,
         val matureCount: Int
     )
 
-    private val rings = mutableListOf<RingData>()
+    private var data: SliceData? = null
 
     private val colorNew        = Color.parseColor("#9E9E9E")
     private val colorInProgress = Color.parseColor("#FFA726")
     private val colorMature     = Color.parseColor("#4CAF50")
     private val colorEmpty      = Color.parseColor("#E0E0E0")
-    private val colorLabel      = Color.parseColor("#212121")
+    private val colorTitle      = Color.parseColor("#212121")
     private val colorLegendText = Color.parseColor("#424242")
 
-    private val arcPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE }
-    private val labelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = colorLabel
+    private val slicePaint  = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
+    private val titlePaint  = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = colorTitle
         textAlign = Paint.Align.CENTER
         isFakeBoldText = true
     }
-    private val legendDotPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
-    private val legendTextPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+    private val dotPaint    = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
+    private val legendPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = colorLegendText
         textAlign = Paint.Align.LEFT
     }
 
-    // Gap between rings as a fraction of stroke width.
-    private val gapFraction = 0.25f
+    private val legendEntries = listOf(
+        colorNew        to "New",
+        colorInProgress to "In progress",
+        colorMature     to "Mature"
+    )
 
-    fun setRings(data: List<RingData>) {
-        rings.clear()
-        rings.addAll(data)
+    fun setData(sliceData: SliceData) {
+        data = sliceData
         requestLayout()
         invalidate()
     }
 
-    // Legend entries: colour + label
-    private val legendEntries by lazy {
-        listOf(
-            colorNew        to "New",
-            colorInProgress to "In progress",
-            colorMature     to "Mature"
-        )
-    }
+    private fun dp(value: Float) = value * resources.displayMetrics.density
+
+    private fun titleHeight()    = dp(20f)
+    private fun legendRowHeight()= dp(22f)
+    private fun legendTopMargin()= dp(8f)
+    private fun titleTopMargin() = dp(6f)
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         val w = MeasureSpec.getSize(widthMeasureSpec)
-        // Chart is square; add room for the legend below.
-        val legendHeight = (legendRowHeight() * legendEntries.size + legendTopMargin()).toInt()
-        setMeasuredDimension(w, w + legendHeight)
+        val extraHeight = (titleTopMargin() + titleHeight() +
+                legendTopMargin() + legendRowHeight() * legendEntries.size).toInt()
+        setMeasuredDimension(w, w + extraHeight)
     }
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        if (rings.isEmpty()) return
+        val d = data ?: return
 
         val w = width.toFloat()
-        val n = rings.size
+        val pieSize = w
+        val padding = dp(4f)
+        val oval = RectF(padding, padding, pieSize - padding, pieSize - padding)
+        val total = d.newCount + d.inProgressCount + d.matureCount
 
-        // Reserve the top-square area for the chart.
-        val chartSize = w
-        val cx = chartSize / 2f
-        val cy = chartSize / 2f
-
-        // Divide the radius into n rings with equal stroke + gap widths.
-        val totalRadius = chartSize / 2f - paddingLeft - 2f
-        val strokeWidth = totalRadius / (n * (1f + gapFraction))
-        val gap = strokeWidth * gapFraction
-
-        arcPaint.strokeWidth = strokeWidth
-        labelPaint.textSize = (strokeWidth * 0.38f).coerceAtLeast(10f)
-
-        rings.forEachIndexed { i, ring ->
-            // Outer ring has the largest radius.
-            val radius = totalRadius - i * (strokeWidth + gap) - strokeWidth / 2f
-            val oval = RectF(cx - radius, cy - radius, cx + radius, cy + radius)
-            val total = ring.newCount + ring.inProgressCount + ring.matureCount
-
-            if (total == 0) {
-                arcPaint.color = colorEmpty
-                canvas.drawOval(oval, arcPaint)
-            } else {
-                val degreesNew  = 360f * ring.newCount        / total
-                val degreesProg = 360f * ring.inProgressCount / total
-                val degreesMat  = 360f * ring.matureCount     / total
-
-                // Draw segments (start from top: -90°)
-                var startAngle = -90f
-                if (ring.newCount > 0) {
-                    arcPaint.color = colorNew
-                    canvas.drawArc(oval, startAngle, degreesNew, false, arcPaint)
-                    startAngle += degreesNew
-                }
-                if (ring.inProgressCount > 0) {
-                    arcPaint.color = colorInProgress
-                    canvas.drawArc(oval, startAngle, degreesProg, false, arcPaint)
-                    startAngle += degreesProg
-                }
-                if (ring.matureCount > 0) {
-                    arcPaint.color = colorMature
-                    canvas.drawArc(oval, startAngle, degreesMat, false, arcPaint)
+        if (total == 0) {
+            slicePaint.color = colorEmpty
+            canvas.drawOval(oval, slicePaint)
+        } else {
+            var startAngle = -90f
+            val slices = listOf(
+                d.newCount        to colorNew,
+                d.inProgressCount to colorInProgress,
+                d.matureCount     to colorMature
+            )
+            slices.forEach { (count, color) ->
+                if (count > 0) {
+                    val sweep = 360f * count / total
+                    slicePaint.color = color
+                    canvas.drawArc(oval, startAngle, sweep, true, slicePaint)
+                    startAngle += sweep
                 }
             }
-
-            // Ring label drawn to the left of the ring.
-            val labelX = cx - radius - strokeWidth / 2f - 4f
-            val labelY = cy + labelPaint.textSize / 3f
-            labelPaint.textAlign = Paint.Align.RIGHT
-            canvas.drawText(ring.label, labelX, labelY, labelPaint)
         }
 
-        // Legend below the chart
-        val dotRadius = legendDotRadius()
-        val legendY0 = chartSize + legendTopMargin()
+        // Title below the pie
+        val titleSize = dp(13f)
+        titlePaint.textSize = titleSize
+        val titleY = pieSize + titleTopMargin() + titleSize
+        canvas.drawText(d.label, w / 2f, titleY, titlePaint)
+
+        // Legend rows
+        val dotRadius = dp(5f)
         val rowH = legendRowHeight()
+        val legendY0 = titleY + legendTopMargin() + rowH * 0.1f
+        legendPaint.textSize = dp(11f)
         legendEntries.forEachIndexed { idx, (color, text) ->
-            legendDotPaint.color = color
-            val dotX = paddingLeft + dotRadius + 4f
-            val dotY = legendY0 + idx * rowH + rowH / 2f
-            canvas.drawCircle(dotX, dotY, dotRadius, legendDotPaint)
-            legendTextPaint.textSize = rowH * 0.55f
-            canvas.drawText(text, dotX + dotRadius + 8f, dotY + legendTextPaint.textSize / 3f, legendTextPaint)
+            dotPaint.color = color
+            val rowCy = legendY0 + idx * rowH + rowH / 2f
+            val dotX = padding + dotRadius
+            canvas.drawCircle(dotX, rowCy, dotRadius, dotPaint)
+            canvas.drawText(text, dotX + dotRadius + dp(5f), rowCy + dp(4f), legendPaint)
         }
     }
-
-    private fun legendDotRadius() = 8f * resources.displayMetrics.density
-    private fun legendRowHeight() = 28f * resources.displayMetrics.density
-    private fun legendTopMargin() = 12f * resources.displayMetrics.density
 }
+
