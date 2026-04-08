@@ -117,3 +117,31 @@ jobs:
           name: "v${{ github.run_number }} · ${{ github.ref_name }} · ${{ github.sha }}"
           files: hsk-learning.apk
           prerelease: ${{ github.ref_name != 'main' }}
+
+  create-pr:
+    name: Open Pull Request to main
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref_name != 'main'
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Create pull request if one does not exist
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          existing=$(gh pr list --head "${{ github.ref_name }}" --base main --json number --jq '.[0].number')
+          if [ -n "$existing" ]; then
+            echo "PR #$existing already exists – skipping."
+          else
+            gh pr create \
+              --base main \
+              --head "${{ github.ref_name }}" \
+              --title "Auto PR: ${{ github.ref_name }}" \
+              --body "Automated pull request opened after a successful build of branch \`${{ github.ref_name }}\` (run #${{ github.run_number }})."
+          fi
