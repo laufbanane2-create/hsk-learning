@@ -168,7 +168,7 @@
             android:layout_marginBottom="12dp" />
 
         <LinearLayout
-            android:id="@+id/groupStats"
+            android:id="@+id/groupStatsContainer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"

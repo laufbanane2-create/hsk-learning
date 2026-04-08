@@ -11,6 +11,8 @@
     <string name="button_right">✓ Right</string>
     <string name="button_wrong">✗ Wrong</string>
     <string name="button_restart">Start Over</string>
+    <string name="button_review_active">Review active cards</string>
+    <string name="label_review_mode">Review mode – no progress recorded</string>
     <string name="cd_tap_to_replay">Tap to replay audio</string>
     <string name="cd_mute_on">Mute audio</string>
     <string name="cd_mute_off">Unmute audio</string>
@@ -49,6 +51,15 @@
     <!-- Statistics section -->
     <string name="settings_stats_title">Word progress</string>
     <string name="stats_category_line">%1$s  —  %2$d new · %3$d in progress · %4$d mature  (total: %5$d)</string>
+    <string name="stats_chart_status">Status</string>
+    <string name="stats_chart_levels">Aspect levels</string>
+    <string name="stats_level_new">New (L0)</string>
+    <string name="stats_level_1">Level 1 (1d)</string>
+    <string name="stats_level_2">Level 2 (2d)</string>
+    <string name="stats_level_3">Level 3 (4d)</string>
+    <string name="stats_level_4">Level 4 (8d)</string>
+    <string name="stats_level_5">Level 5 (16d)</string>
+    <string name="stats_level_mature">Mature (L6)</string>
 
     <!-- Update section -->
     <string name="settings_update_title">App update</string>
