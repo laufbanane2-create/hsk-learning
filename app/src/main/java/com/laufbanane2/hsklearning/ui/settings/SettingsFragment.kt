@@ -328,7 +328,7 @@ class SettingsFragment : Fragment() {
                 )
             }
 
-            val levelEntries = (0..6).map { lvl ->
+            val levelEntries = (1..5).map { lvl ->
                 PieChartView.Entry(levelLabels[lvl], levelColors[lvl], levelCounts[lvl])
             }
             val levelChart = PieChartView(requireContext()).apply {
