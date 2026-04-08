@@ -191,8 +191,8 @@ class SrsManager(context: Context) {
         val now = System.currentTimeMillis()
         val level = getAspectLevel(vocabId, aspect)
 
-        val newLevel = if (correct) (level + 1).coerceAtMost(MATURE_LEVEL) else 1
-        val newNextReview = now + LEVEL_INTERVALS_MS[newLevel]
+        val newLevel = if (correct) (level + 1).coerceAtMost(MATURE_LEVEL) else 0
+        val newNextReview = if (newLevel == 0) 0L else now + LEVEL_INTERVALS_MS[newLevel]
 
         prefs.edit()
             .putInt(levelKey(vocabId, aspect), newLevel)
