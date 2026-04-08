@@ -287,7 +287,7 @@ class SettingsFragment : Fragment() {
             val headerLabel = TextView(requireContext()).apply {
                 text = label
                 textSize = 15f
-                isFakeBoldText = true
+                setTypeface(typeface, android.graphics.Typeface.BOLD)
                 layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
             }
             val arrow = TextView(requireContext()).apply {
