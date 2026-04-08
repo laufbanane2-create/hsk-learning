@@ -167,6 +167,12 @@
             android:textStyle="bold"
             android:layout_marginBottom="12dp" />
 
+        <com.laufbanane2.hsklearning.ui.settings.PieChartView
+            android:id="@+id/pieChartProgress"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp" />
+
         <LinearLayout
             android:id="@+id/groupStats"
             android:layout_width="match_parent"
