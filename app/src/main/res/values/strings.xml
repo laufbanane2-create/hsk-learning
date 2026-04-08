@@ -11,6 +11,8 @@
     <string name="button_right">✓ Right</string>
     <string name="button_wrong">✗ Wrong</string>
     <string name="button_restart">Start Over</string>
+    <string name="button_review_active">Review active cards</string>
+    <string name="label_review_mode">Review mode – no progress recorded</string>
     <string name="cd_tap_to_replay">Tap to replay audio</string>
     <string name="cd_mute_on">Mute audio</string>
     <string name="cd_mute_off">Unmute audio</string>

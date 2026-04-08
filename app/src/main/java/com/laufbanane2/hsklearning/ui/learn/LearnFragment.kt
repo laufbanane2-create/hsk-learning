@@ -43,6 +43,8 @@ class LearnFragment : Fragment() {
     private var currentIndex = 0
     private var currentAspectCard: AspectCard? = null
     private var answerRevealed = false
+    // When true the session is a post-completion review: no SRS progress is recorded.
+    private var readOnlyReview = false
     // Convenience accessor used by speakSentence() to look up the raw audio resource.
     private val currentItem: VocabItem? get() = currentAspectCard?.item
     // Cached count of active cards; updated in loadVocab and after each graduation.
@@ -97,6 +99,7 @@ class LearnFragment : Fragment() {
         binding.buttonWrong.setOnClickListener { handleAnswer(correct = false) }
         binding.buttonRestart.setOnClickListener { loadVocab() }
         binding.buttonStudyAll.setOnClickListener { loadVocab(reviewAll = true) }
+        binding.buttonReviewActive.setOnClickListener { loadVocab(readOnly = true) }
     }
 
     override fun onResume() {
@@ -238,7 +241,7 @@ class LearnFragment : Fragment() {
         }
     }
 
-    private fun loadVocab(reviewAll: Boolean = false) {
+    private fun loadVocab(reviewAll: Boolean = false, readOnly: Boolean = false) {
         val prefs = requireContext().getSharedPreferences("settings", Context.MODE_PRIVATE)
         val hsk1 = prefs.getBoolean("hsk1_enabled", true)
         val hsk2 = prefs.getBoolean("hsk2_enabled", false)
@@ -247,6 +250,7 @@ class LearnFragment : Fragment() {
         loadedHsk2 = hsk2
         loadedDeckSize = deckSize
         vocabLoaded = true
+        readOnlyReview = readOnly
 
         allVocab = VocabData.getVocab(hsk1, hsk2)
         allVocabIds = allVocab.map { it.id }
@@ -269,6 +273,19 @@ class LearnFragment : Fragment() {
             vocabList = allVocab.flatMap { item ->
                 SrsManager.ALL_ASPECTS.map { aspect -> AspectCard(item, aspect) }
             }.shuffled().toMutableList()
+        } else if (readOnly) {
+            // Read-only review after a completed session: show all aspects of every
+            // IN_PROGRESS card, regardless of due date. No SRS progress will be recorded.
+            val activeIds = srsManager.getActiveIds(allIds).toSet()
+            vocabList = allVocab
+                .filter { it.id in activeIds }
+                .flatMap { item ->
+                    SrsManager.ALL_ASPECTS
+                        .filter { aspect -> !srsManager.isAspectMature(item.id, aspect) }
+                        .map { aspect -> AspectCard(item, aspect) }
+                }
+                .shuffled()
+                .toMutableList()
         } else {
             // Normal mode: for each ACTIVE card, add one AspectCard per due aspect.
             val activeIds = srsManager.getActiveIds(allIds).toSet()
@@ -330,12 +347,16 @@ class LearnFragment : Fragment() {
         binding.groupFinished.visibility = View.GONE
         binding.groupNoDue.visibility = View.GONE
 
-        binding.textProgress.text = getString(
-            R.string.label_progress,
-            currentIndex + 1,
-            vocabList.size,
-            activeDeckCount
-        )
+        binding.textProgress.text = if (readOnlyReview) {
+            getString(R.string.label_review_mode)
+        } else {
+            getString(
+                R.string.label_progress,
+                currentIndex + 1,
+                vocabList.size,
+                activeDeckCount
+            )
+        }
 
         // Show HSK level + aspect type + SRS level in the badge.
         val aspectLabel = getString(when (card.aspect) {
@@ -417,6 +438,13 @@ class LearnFragment : Fragment() {
     private fun handleAnswer(correct: Boolean) {
         val card = currentAspectCard ?: return
         val item = card.item
+
+        if (readOnlyReview) {
+            // Read-only mode: no SRS levels or stats are modified.
+            currentIndex++
+            showCurrentWord()
+            return
+        }
 
         if (correct) {
             statsManager.incrementCorrect(item.id)
