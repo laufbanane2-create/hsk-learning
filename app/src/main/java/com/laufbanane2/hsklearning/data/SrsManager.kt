@@ -20,9 +20,10 @@ import android.content.Context
  *  Level 6: mature (32 days); no longer shown for review.
  *
  * Correct answer → aspect level +1.
- * Wrong answer   → aspect level resets to 1.
+ * Wrong answer   → aspect level resets to 0 (always due; re-queued for the current session).
  *
- * A card becomes MATURE (IN_PROGRESS → MATURE) once ALL three aspects reach level 6.
+ * A card becomes MATURE when all three aspects reach level 6.
+ * Mature aspects are skipped during normal study but appear in "Review all" mode.
  *
  * Active/in-progress deck:
  *  Only IN_PROGRESS cards are shown during normal study. A card is promoted from
