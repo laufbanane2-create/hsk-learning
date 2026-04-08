@@ -252,7 +252,7 @@ class LearnFragment : Fragment() {
         allVocabIds = allVocab.map { it.id }
 
         if (allVocab.isEmpty()) {
-            vocabList = emptyList()
+            vocabList = mutableListOf()
             currentIndex = 0
             saveSession()
             showEmptyState()
