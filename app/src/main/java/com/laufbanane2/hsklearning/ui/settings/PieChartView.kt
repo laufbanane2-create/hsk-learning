@@ -9,15 +9,11 @@ import android.util.AttributeSet
 import android.view.View
 
 /**
- * Draws a single standard pie chart (filled wedges) for one HSK category.
+ * Draws a single standard pie chart (filled wedges).
  *
- * Three segments:
- *   - NEW        → grey   (#9E9E9E)
- *   - IN_PROGRESS → amber  (#FFA726)
- *   - MATURE     → green  (#4CAF50)
- *
- * A title label is drawn centred below the pie, followed by a compact legend.
- * Call [setData] to populate the chart; the view re-draws itself automatically.
+ * Call [setData] with a title and a list of [Entry] items to populate the chart.
+ * Each entry contributes one coloured wedge and one legend row.
+ * The view re-measures and redraws itself automatically.
  */
 class PieChartView @JvmOverloads constructor(
     context: Context,
@@ -25,84 +21,72 @@ class PieChartView @JvmOverloads constructor(
     defStyle: Int = 0
 ) : View(context, attrs, defStyle) {
 
-    data class SliceData(
-        val label: String,
-        val newCount: Int,
-        val inProgressCount: Int,
-        val matureCount: Int
-    )
+    /** One slice in the pie chart. */
+    data class Entry(val label: String, val color: Int, val count: Int)
 
-    private var data: SliceData? = null
+    private var chartTitle: String = ""
+    private var entries: List<Entry> = emptyList()
 
-    private val colorNew        = Color.parseColor("#9E9E9E")
-    private val colorInProgress = Color.parseColor("#FFA726")
-    private val colorMature     = Color.parseColor("#4CAF50")
     private val colorEmpty      = Color.parseColor("#E0E0E0")
     private val colorTitle      = Color.parseColor("#212121")
     private val colorLegendText = Color.parseColor("#424242")
 
-    private val slicePaint  = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
-    private val titlePaint  = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+    private val slicePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
+    private val titlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = colorTitle
         textAlign = Paint.Align.CENTER
         isFakeBoldText = true
     }
-    private val dotPaint    = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
+    private val dotPaint   = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
     private val legendPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = colorLegendText
         textAlign = Paint.Align.LEFT
     }
 
-    private val legendEntries = listOf(
-        colorNew        to "New",
-        colorInProgress to "In progress",
-        colorMature     to "Mature"
-    )
-
-    fun setData(sliceData: SliceData) {
-        data = sliceData
+    fun setData(title: String, entries: List<Entry>) {
+        chartTitle = title
+        this.entries = entries
         requestLayout()
         invalidate()
     }
 
     private fun dp(value: Float) = value * resources.displayMetrics.density
 
-    private fun titleHeight()    = dp(20f)
-    private fun legendRowHeight()= dp(22f)
-    private fun legendTopMargin()= dp(8f)
-    private fun titleTopMargin() = dp(6f)
+    private fun titleHeight()     = dp(20f)
+    private fun legendRowHeight() = dp(22f)
+    private fun legendTopMargin() = dp(8f)
+    private fun titleTopMargin()  = dp(6f)
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         val w = MeasureSpec.getSize(widthMeasureSpec)
+        if (entries.isEmpty()) {
+            setMeasuredDimension(w, 0)
+            return
+        }
         val extraHeight = (titleTopMargin() + titleHeight() +
-                legendTopMargin() + legendRowHeight() * legendEntries.size).toInt()
+                legendTopMargin() + legendRowHeight() * entries.size).toInt()
         setMeasuredDimension(w, w + extraHeight)
     }
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        val d = data ?: return
+        if (entries.isEmpty()) return
 
         val w = width.toFloat()
         val pieSize = w
         val padding = dp(4f)
         val oval = RectF(padding, padding, pieSize - padding, pieSize - padding)
-        val total = d.newCount + d.inProgressCount + d.matureCount
+        val total = entries.sumOf { it.count }
 
         if (total == 0) {
             slicePaint.color = colorEmpty
             canvas.drawOval(oval, slicePaint)
         } else {
             var startAngle = -90f
-            val slices = listOf(
-                d.newCount        to colorNew,
-                d.inProgressCount to colorInProgress,
-                d.matureCount     to colorMature
-            )
-            slices.forEach { (count, color) ->
-                if (count > 0) {
-                    val sweep = 360f * count / total
-                    slicePaint.color = color
+            entries.forEach { entry ->
+                if (entry.count > 0) {
+                    val sweep = 360f * entry.count / total
+                    slicePaint.color = entry.color
                     canvas.drawArc(oval, startAngle, sweep, true, slicePaint)
                     startAngle += sweep
                 }
@@ -113,19 +97,19 @@ class PieChartView @JvmOverloads constructor(
         val titleSize = dp(13f)
         titlePaint.textSize = titleSize
         val titleY = pieSize + titleTopMargin() + titleSize
-        canvas.drawText(d.label, w / 2f, titleY, titlePaint)
+        canvas.drawText(chartTitle, w / 2f, titleY, titlePaint)
 
         // Legend rows
         val dotRadius = dp(5f)
         val rowH = legendRowHeight()
         val legendY0 = titleY + legendTopMargin() + rowH * 0.1f
         legendPaint.textSize = dp(11f)
-        legendEntries.forEachIndexed { idx, (color, text) ->
-            dotPaint.color = color
+        entries.forEachIndexed { idx, entry ->
+            dotPaint.color = entry.color
             val rowCy = legendY0 + idx * rowH + rowH / 2f
             val dotX = padding + dotRadius
             canvas.drawCircle(dotX, rowCy, dotRadius, dotPaint)
-            canvas.drawText(text, dotX + dotRadius + dp(5f), rowCy + dp(4f), legendPaint)
+            canvas.drawText(entry.label, dotX + dotRadius + dp(5f), rowCy + dp(4f), legendPaint)
         }
     }
 }
