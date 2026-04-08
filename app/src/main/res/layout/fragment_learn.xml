@@ -302,12 +302,31 @@
                 android:textSize="16sp"
                 android:gravity="center"
                 android:textIsSelectable="true"
-                android:layout_marginBottom="32dp" />
+                android:layout_marginBottom="16dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/no_due_review_info"
+                android:textSize="14sp"
+                android:gravity="center"
+                android:textIsSelectable="true"
+                android:textStyle="italic"
+                android:textColor="?android:attr/textColorSecondary"
+                android:layout_marginBottom="24dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/buttonReviewActiveNoDue"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/button_review_active" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/buttonStudyAll"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                 android:text="@string/button_study_all" />
 
         </LinearLayout>
