@@ -3,14 +3,14 @@ package com.laufbanane2.hsklearning
 import android.util.Log
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import org.json.JSONObject
+import org.json.JSONArray
 
 data class UpdateInfo(val latestVersionCode: Int, val apkUrl: String)
 
 object UpdateChecker {
 
     private const val RELEASES_URL =
-        "https://api.github.com/repos/laufbanane2-create/hsk-learning/releases/latest"
+        "https://api.github.com/repos/laufbanane2-create/hsk-learning/releases"
 
     fun check(currentVersionCode: Int): UpdateInfo? {
         return try {
@@ -22,22 +22,33 @@ object UpdateChecker {
             val body = client.newCall(request).execute().use { it.body?.string() }
                 ?: return null
 
-            val json = JSONObject(body)
-            val tagName = json.getString("tag_name")
-            val latestVersionCode = tagName.removePrefix("v").toInt()
+            val releases = JSONArray(body)
 
-            if (latestVersionCode <= currentVersionCode) return null
+            // Find the release with the highest version code (includes prereleases).
+            var bestVersionCode = currentVersionCode
+            var bestApkUrl: String? = null
 
-            val apkUrl = json
-                .getJSONArray("assets")
-                .let { assets ->
-                    (0 until assets.length())
-                        .map { assets.getJSONObject(it) }
-                        .firstOrNull { it.getString("name").endsWith(".apk") }
-                        ?.getString("browser_download_url")
-                } ?: return null
+            for (i in 0 until releases.length()) {
+                val json = releases.getJSONObject(i)
+                val tagName = json.optString("tag_name").takeIf { it.isNotEmpty() } ?: continue
+                val versionCode = tagName.removePrefix("v").toIntOrNull() ?: continue
+                if (versionCode <= bestVersionCode) continue
 
-            UpdateInfo(latestVersionCode, apkUrl)
+                val apkUrl = json
+                    .getJSONArray("assets")
+                    .let { assets ->
+                        (0 until assets.length())
+                            .map { assets.getJSONObject(it) }
+                            .firstOrNull { it.getString("name").endsWith(".apk") }
+                            ?.getString("browser_download_url")
+                    } ?: continue
+
+                bestVersionCode = versionCode
+                bestApkUrl = apkUrl
+            }
+
+            if (bestApkUrl == null) return null
+            UpdateInfo(bestVersionCode, bestApkUrl)
         } catch (e: Exception) {
             Log.w("UpdateChecker", "Update check failed", e)
             null

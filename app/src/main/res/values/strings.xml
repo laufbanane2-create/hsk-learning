@@ -22,9 +22,9 @@
     <string name="no_due_message_future">Next card due %s.</string>
     <string name="no_due_message_now">Cards are now due – tap below to start!</string>
     <string name="button_study_all">Review all cards anyway</string>
-    <string name="label_interval">Interval: %s</string>
+    <string name="label_level">Level: %s</string>
     <string name="label_progress">%1$d / %2$d · %3$d active</string>
-    <string name="word_graduated">🎉 All aspects mastered! A new word has been added.</string>
+    <string name="word_matured">🎉 All aspects matured! A new word has been added.</string>
 
     <!-- Aspect labels shown in the level badge during study -->
     <string name="aspect_reading">👁 Reading</string>
@@ -44,11 +44,11 @@
     <string name="font_preview_sample">我在学习汉语。</string>
     <string name="font_preview_loading">Loading font…</string>
     <string name="settings_deck_title">Active deck size</string>
-    <string name="settings_deck_subtitle">Number of words you actively study at once. Master a word (3 correct in a row) to unlock the next one from the queue.</string>
+    <string name="settings_deck_subtitle">Number of words you actively study at once. All 3 cards (word, sentence, audio) for each word are tracked individually through levels 1–5. A word becomes mature (level 6) once all cards are mastered. Lower the deck size to return the least-progressed words to the queue.</string>
 
     <!-- Statistics section -->
     <string name="settings_stats_title">Word progress</string>
-    <string name="stats_category_line">%1$s  —  %2$d new · %3$d active · %4$d graduated  (total: %5$d)</string>
+    <string name="stats_category_line">%1$s  —  %2$d new · %3$d in progress · %4$d mature  (total: %5$d)</string>
 
     <!-- Update section -->
     <string name="settings_update_title">App update</string>

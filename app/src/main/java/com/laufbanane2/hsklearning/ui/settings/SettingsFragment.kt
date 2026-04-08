@@ -218,9 +218,9 @@ class SettingsFragment : Fragment() {
             var graduatedCount = 0
             vocab.forEach { item ->
                 when (srsManager.getCardStatus(item.id)) {
-                    SrsManager.CardStatus.NEW       -> newCount++
-                    SrsManager.CardStatus.ACTIVE    -> activeCount++
-                    SrsManager.CardStatus.GRADUATED -> graduatedCount++
+                    SrsManager.CardStatus.NEW         -> newCount++
+                    SrsManager.CardStatus.IN_PROGRESS -> activeCount++
+                    SrsManager.CardStatus.MATURE      -> graduatedCount++
                 }
             }
             val line = getString(

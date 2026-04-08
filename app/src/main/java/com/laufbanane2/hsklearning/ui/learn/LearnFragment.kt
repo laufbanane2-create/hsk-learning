@@ -38,7 +38,7 @@ class LearnFragment : Fragment() {
     /** A vocabulary item paired with the aspect being tested in this session slot. */
     private data class AspectCard(val item: VocabItem, val aspect: SrsManager.AspectType)
 
-    private var vocabList: List<AspectCard> = emptyList()
+    private var vocabList: MutableList<AspectCard> = mutableListOf()
     private var allVocab: List<VocabItem> = emptyList()
     private var currentIndex = 0
     private var currentAspectCard: AspectCard? = null
@@ -252,7 +252,7 @@ class LearnFragment : Fragment() {
         allVocabIds = allVocab.map { it.id }
 
         if (allVocab.isEmpty()) {
-            vocabList = emptyList()
+            vocabList = mutableListOf()
             currentIndex = 0
             saveSession()
             showEmptyState()
@@ -268,7 +268,7 @@ class LearnFragment : Fragment() {
             // Review all (vocab, aspect) combinations in random order.
             vocabList = allVocab.flatMap { item ->
                 SrsManager.ALL_ASPECTS.map { aspect -> AspectCard(item, aspect) }
-            }.shuffled()
+            }.shuffled().toMutableList()
         } else {
             // Normal mode: for each ACTIVE card, add one AspectCard per due aspect.
             val activeIds = srsManager.getActiveIds(allIds).toSet()
@@ -281,7 +281,7 @@ class LearnFragment : Fragment() {
                     }
                 }
             }
-            vocabList = aspectCards.shuffled()
+            vocabList = aspectCards.shuffled().toMutableList()
         }
 
         currentIndex = 0
@@ -337,13 +337,19 @@ class LearnFragment : Fragment() {
             activeDeckCount
         )
 
-        // Show level + aspect type in the badge.
+        // Show HSK level + aspect type + SRS level in the badge.
         val aspectLabel = getString(when (card.aspect) {
             SrsManager.AspectType.READING          -> R.string.aspect_reading
             SrsManager.AspectType.LISTENING        -> R.string.aspect_listening
             SrsManager.AspectType.READING_SENTENCE -> R.string.aspect_sentence
         })
-        binding.textLevelBadge.text = "HSK ${item.level}  $aspectLabel"
+        val srsLevel = srsManager.getAspectLevel(item.id, card.aspect)
+        val srsLevelStr = when {
+            srsLevel == 0                          -> "New"
+            srsLevel >= SrsManager.MATURE_LEVEL    -> "Mature"
+            else                                   -> "L$srsLevel"
+        }
+        binding.textLevelBadge.text = "HSK ${item.level}  $aspectLabel  $srsLevelStr"
 
         binding.buttonShow.visibility = View.VISIBLE
         binding.buttonShow.isEnabled = true
@@ -355,8 +361,8 @@ class LearnFragment : Fragment() {
         val wrong = statsManager.getWrong(item.id)
         binding.textStats.text = "✓ $correct   ✗ $wrong"
         binding.textNextReview.text = getString(
-            R.string.label_interval,
-            srsManager.formatAspectInterval(item.id, card.aspect)
+            R.string.label_level,
+            srsManager.formatAspectLevel(item.id, card.aspect)
         )
 
         when (card.aspect) {
@@ -416,23 +422,26 @@ class LearnFragment : Fragment() {
             statsManager.incrementCorrect(item.id)
         } else {
             statsManager.incrementWrong(item.id)
+            // Wrong answer resets this aspect to level 0; re-queue it so the session
+            // only finishes once every aspect is back above level 0.
+            vocabList.add(card)
         }
         srsManager.recordAnswer(item.id, card.aspect, correct)
 
-        if (correct && srsManager.shouldGraduate(item.id)) {
+        if (correct && srsManager.shouldMature(item.id)) {
             val prefs = requireContext().getSharedPreferences("settings", Context.MODE_PRIVATE)
             val deckSize = prefs.getInt("active_deck_size", DEFAULT_ACTIVE_DECK_SIZE)
-            srsManager.graduateCard(item.id, allVocabIds, deckSize)
+            srsManager.matureCard(item.id, allVocabIds, deckSize)
             activeDeckCount = srsManager.getActiveIds(allVocabIds).size
-            Snackbar.make(binding.root, getString(R.string.word_graduated), Snackbar.LENGTH_SHORT).show()
+            Snackbar.make(binding.root, getString(R.string.word_matured), Snackbar.LENGTH_SHORT).show()
         }
 
         val c = statsManager.getCorrect(item.id)
         val w = statsManager.getWrong(item.id)
         binding.textStats.text = "✓ $c   ✗ $w"
         binding.textNextReview.text = getString(
-            R.string.label_interval,
-            srsManager.formatAspectInterval(item.id, card.aspect)
+            R.string.label_level,
+            srsManager.formatAspectLevel(item.id, card.aspect)
         )
 
         currentIndex++
@@ -505,7 +514,7 @@ class LearnFragment : Fragment() {
         vocabLoaded = true
         srsManager.initializeActiveDeck(allVocabIds, deckSize)
         activeDeckCount = srsManager.getActiveIds(allVocabIds).size
-        vocabList = cards
+        vocabList = cards.toMutableList()
         currentIndex = savedIndex
         showCurrentWord()
         return true
