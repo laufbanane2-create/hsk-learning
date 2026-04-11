@@ -24,6 +24,7 @@
     <string name="no_due_message_future">Next card due %s.</string>
     <string name="no_due_message_now">Cards are now due – tap below to start!</string>
     <string name="button_study_all">Review all cards anyway</string>
+    <string name="no_due_review_info">Reviews in this mode won\'t change any card levels.</string>
     <string name="label_level">Level: %s</string>
     <string name="label_progress">%1$d / %2$d · %3$d active</string>
     <string name="word_matured">🎉 All aspects matured! A new word has been added.</string>

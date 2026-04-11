@@ -100,6 +100,7 @@ class LearnFragment : Fragment() {
         binding.buttonRestart.setOnClickListener { loadVocab() }
         binding.buttonStudyAll.setOnClickListener { loadVocab(reviewAll = true) }
         binding.buttonReviewActive.setOnClickListener { loadVocab(readOnly = true) }
+        binding.buttonReviewActiveNoDue.setOnClickListener { loadVocab(readOnly = true) }
     }
 
     override fun onResume() {
@@ -312,6 +313,7 @@ class LearnFragment : Fragment() {
     }
 
     private fun showEmptyState() {
+        binding.root.setBackgroundColor(android.graphics.Color.TRANSPARENT)
         binding.groupCard.visibility = View.GONE
         binding.groupEmpty.visibility = View.VISIBLE
         binding.groupFinished.visibility = View.GONE
@@ -319,6 +321,9 @@ class LearnFragment : Fragment() {
     }
 
     private fun showNoDueState(allIds: List<String>) {
+        binding.root.setBackgroundColor(
+            resources.getColor(R.color.no_due_background, requireContext().theme)
+        )
         binding.groupCard.visibility = View.GONE
         binding.groupEmpty.visibility = View.GONE
         binding.groupFinished.visibility = View.GONE
@@ -342,6 +347,7 @@ class LearnFragment : Fragment() {
         val card = currentAspectCard ?: return
         val item = card.item
 
+        binding.root.setBackgroundColor(android.graphics.Color.TRANSPARENT)
         binding.groupCard.visibility = View.VISIBLE
         binding.groupEmpty.visibility = View.GONE
         binding.groupFinished.visibility = View.GONE
@@ -478,6 +484,7 @@ class LearnFragment : Fragment() {
     }
 
     private fun showFinished() {
+        binding.root.setBackgroundColor(android.graphics.Color.TRANSPARENT)
         binding.groupCard.visibility = View.GONE
         binding.groupEmpty.visibility = View.GONE
         binding.groupFinished.visibility = View.VISIBLE

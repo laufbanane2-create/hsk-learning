@@ -227,16 +227,6 @@ class SettingsFragment : Fragment() {
             android.graphics.Color.parseColor("#80DEEA"), // L5 light teal
             android.graphics.Color.parseColor("#4CAF50")  // L6 mature green
         )
-        val levelLabels = listOf(
-            getString(R.string.stats_level_new),
-            getString(R.string.stats_level_1),
-            getString(R.string.stats_level_2),
-            getString(R.string.stats_level_3),
-            getString(R.string.stats_level_4),
-            getString(R.string.stats_level_5),
-            getString(R.string.stats_level_mature)
-        )
-
         categories.forEach { (label, vocab) ->
             // ── Count status ────────────────────────────────────────────────
             var newCount = 0; var activeCount = 0; var matureCount = 0
@@ -321,15 +311,16 @@ class SettingsFragment : Fragment() {
                 setData(
                     getString(R.string.stats_chart_status),
                     listOf(
-                        PieChartView.Entry("New", colorNew, newCount),
-                        PieChartView.Entry("In progress", colorInProgress, activeCount),
-                        PieChartView.Entry("Mature", colorMature, matureCount)
+                        PieChartView.Entry("New ($newCount)", colorNew, newCount),
+                        PieChartView.Entry("In progress ($activeCount)", colorInProgress, activeCount),
+                        PieChartView.Entry("Mature ($matureCount)", colorMature, matureCount)
                     )
                 )
             }
 
             val levelEntries = (1..5).map { lvl ->
-                PieChartView.Entry(levelLabels[lvl], levelColors[lvl], levelCounts[lvl])
+                val days = SrsManager.LEVEL_INTERVALS_MS[lvl] / 86_400_000L
+                PieChartView.Entry("Level $lvl (${days}d, ${levelCounts[lvl]})", levelColors[lvl], levelCounts[lvl])
             }
             val levelChart = PieChartView(requireContext()).apply {
                 layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)

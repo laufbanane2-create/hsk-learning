@@ -103,13 +103,13 @@ class PieChartView @JvmOverloads constructor(
         val dotRadius = dp(5f)
         val rowH = legendRowHeight()
         val legendY0 = titleY + legendTopMargin() + rowH * 0.1f
-        legendPaint.textSize = dp(11f)
+        legendPaint.textSize = dp(12f)
         entries.forEachIndexed { idx, entry ->
             dotPaint.color = entry.color
             val rowCy = legendY0 + idx * rowH + rowH / 2f
             val dotX = padding + dotRadius
             canvas.drawCircle(dotX, rowCy, dotRadius, dotPaint)
-            canvas.drawText("${entry.label} (${entry.count})", dotX + dotRadius + dp(5f), rowCy + dp(4f), legendPaint)
+            canvas.drawText(entry.label, dotX + dotRadius + dp(5f), rowCy + dp(4f), legendPaint)
         }
     }
 }
