@@ -71,6 +71,10 @@ class LearnFragment : Fragment() {
         private const val KEY_SESSION_HSK1 = "session_hsk1"
         private const val KEY_SESSION_HSK2 = "session_hsk2"
         private const val KEY_SESSION_DECK_SIZE = "session_deck_size"
+        private const val KEY_SESSION_DAY = "session_day"
+
+        /** Returns the number of complete days since the Unix epoch (UTC). */
+        private fun currentDayEpoch(): Long = System.currentTimeMillis() / 86_400_000L
     }
 
     // All vocab IDs for the currently loaded vocabulary set; kept in sync with allVocab.
@@ -496,6 +500,7 @@ class LearnFragment : Fragment() {
             .putBoolean(KEY_SESSION_HSK1, loadedHsk1)
             .putBoolean(KEY_SESSION_HSK2, loadedHsk2)
             .putInt(KEY_SESSION_DECK_SIZE, loadedDeckSize)
+            .putLong(KEY_SESSION_DAY, currentDayEpoch())
             .apply()
     }
 
@@ -507,6 +512,7 @@ class LearnFragment : Fragment() {
         val sessionPrefs = requireContext().getSharedPreferences(SESSION_PREFS, Context.MODE_PRIVATE)
         val encoded = sessionPrefs.getString(KEY_SESSION_CARDS, null) ?: return false
         val savedIndex = sessionPrefs.getInt(KEY_SESSION_INDEX, 0)
+        if (sessionPrefs.getLong(KEY_SESSION_DAY, -1L) != currentDayEpoch()) return false
         if (sessionPrefs.getBoolean(KEY_SESSION_HSK1, !hsk1) != hsk1 ||
             sessionPrefs.getBoolean(KEY_SESSION_HSK2, !hsk2) != hsk2 ||
             sessionPrefs.getInt(KEY_SESSION_DECK_SIZE, -1) != deckSize) {
