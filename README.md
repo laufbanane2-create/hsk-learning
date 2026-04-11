@@ -49,6 +49,26 @@ Install on a connected device:
 
 Or open the project in Android Studio and click **Run**.
 
+### Generate Anki Deck
+
+An Anki deck (`.apkg`) with all HSK 2 vocabulary can be generated and imported directly into [Anki](https://apps.ankiweb.net/).
+
+```bash
+pip install genanki
+python scripts/generate_anki_deck.py          # writes scripts/hsk2.apkg
+python scripts/generate_anki_deck.py -o ~/Desktop/hsk2.apkg  # custom path
+```
+
+The deck contains **155 vocabulary entries × 3 card types = 465 cards**:
+
+| Card type | Front | Back |
+|-----------|-------|------|
+| **Word** | Chinese character(s) | Pinyin + English + example sentence + audio |
+| **Sentence** | Chinese example sentence + audio | Pinyin + English translation + word |
+| **Audio** | 🔊 (spoken example sentence) | Chinese sentence + pinyin + English + word |
+
+Audio files from `app/src/main/res/raw/` are embedded automatically when present.
+
 ### Generate Audio Files
 
 Audio is generated with the ElevenLabs API. You need an API key.
@@ -80,7 +100,8 @@ app/
     │   ├── raw/                   # Audio files (.mp3)
     │   └── values/strings.xml     # All user-facing strings
 scripts/
-└── generate_audio.py              # ElevenLabs audio generation script
+├── generate_audio.py              # ElevenLabs audio generation script
+└── generate_anki_deck.py          # Anki deck (.apkg) generation script
 ```
 
 ## Vocabulary Coverage

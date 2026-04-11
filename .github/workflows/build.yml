@@ -46,6 +46,34 @@ jobs:
             git push
           fi
 
+  build-anki-deck:
+    name: Build Anki Deck (.apkg)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Install genanki
+        run: pip install genanki
+
+      - name: Build Anki deck
+        run: python3 scripts/generate_anki_deck.py --output hsk2.apkg
+
+      - name: Upload Anki deck artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: hsk2-anki-deck
+          path: hsk2.apkg
+          retention-days: 30
+
   build:
     name: Build Release APK
     runs-on: ubuntu-latest
