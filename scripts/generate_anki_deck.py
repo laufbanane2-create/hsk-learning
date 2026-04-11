@@ -3,8 +3,8 @@
 Generate an Anki deck (.apkg) for HSK 2 vocabulary.
 
 The deck contains three card types per vocabulary entry:
-  1. Word card   – front: Chinese character(s); back: pinyin + English + audio
-  2. Sentence card – front: example sentence + audio; back: pinyin + translation
+  1. Word card   – front: Chinese character(s); back: pinyin + English + audio + sentence
+  2. Sentence card – front: example sentence + audio; back: translation + word + audio (replay)
   3. Audio card  – front: audio only; back: Chinese + pinyin + English + sentence
 
 Audio files are taken from app/src/main/res/raw/ (one MP3 per vocab entry
@@ -426,6 +426,7 @@ HSK2_MODEL = genanki.Model(
 <div class="chinese">{{Chinese}}</div>
 <div class="pinyin">{{Pinyin}}</div>
 <div class="english">{{English}}</div>
+{{Audio}}
 """,
         },
         # ── Card 3: Audio Listening ──────────────────────────────────────
