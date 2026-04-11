@@ -371,7 +371,7 @@ CSS = """
     background-color: #fafafa;
     padding: 20px;
 }
-.chinese { font-size: 48px; color: #c00; margin-bottom: 8px; }
+.chinese { font-size: 48px; color: #fff; margin-bottom: 8px; }
 .pinyin  { font-size: 22px; color: #555; margin-bottom: 4px; }
 .english { font-size: 20px; color: #333; }
 .sentence-zh { font-size: 28px; color: #333; margin: 12px 0 4px; }
