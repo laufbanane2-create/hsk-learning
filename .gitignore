@@ -8,3 +8,6 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Generated Anki deck (binary artifact — regenerate with scripts/generate_anki_deck.py)
+scripts/*.apkg
