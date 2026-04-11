@@ -7,7 +7,7 @@ The deck contains three card types per vocabulary entry:
   2. Sentence card – front: example sentence + audio; back: translation + word + audio (replay)
   3. Audio card  – front: audio only; back: Chinese + pinyin + English + sentence
 
-Audio files are taken from app/src/main/res/raw/ (one MP3 per vocab entry
+Audio files are taken from audio/ at the repository root (one MP3 per vocab entry
 that contains the spoken example sentence).
 
 Usage:
@@ -34,7 +34,7 @@ except ImportError:
 # ---------------------------------------------------------------------------
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 REPO_ROOT = os.path.dirname(SCRIPT_DIR)
-AUDIO_DIR = os.path.join(REPO_ROOT, "app", "src", "main", "res", "raw")
+AUDIO_DIR = os.path.join(REPO_ROOT, "audio")
 
 # ---------------------------------------------------------------------------
 # HSK 2 vocabulary — mirrors VocabData.kt

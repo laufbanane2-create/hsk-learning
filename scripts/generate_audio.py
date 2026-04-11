@@ -4,7 +4,7 @@ Build-time audio generation script for HSK Learning.
 
 Generates MP3 files for every vocabulary sentence using the ElevenLabs API
 (model: eleven_v3, voice: Bella) and writes them to
-app/src/main/res/raw/ so they are bundled with the APK.
+audio/ at the repository root.
 
 Usage:
     python3 scripts/generate_audio.py --api-key <ELEVENLABS_API_KEY>
@@ -371,7 +371,7 @@ def main() -> None:
     parser.add_argument("--force", action="store_true",
                         help="Re-generate even if the MP3 already exists")
     parser.add_argument("--output-dir", default=None,
-                        help="Directory to write MP3 files (default: app/src/main/res/raw/)")
+                        help="Directory to write MP3 files (default: audio/ at repo root)")
     args = parser.parse_args()
 
     api_key = args.api_key.strip()
@@ -383,7 +383,7 @@ def main() -> None:
     # this script's own directory when the script lives in scripts/).
     script_dir = os.path.dirname(os.path.abspath(__file__))
     project_root = os.path.dirname(script_dir)
-    output_dir = args.output_dir or os.path.join(project_root, "app", "src", "main", "res", "raw")
+    output_dir = args.output_dir or os.path.join(project_root, "audio")
     os.makedirs(output_dir, exist_ok=True)
 
     total = len(VOCAB)
