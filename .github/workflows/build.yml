@@ -49,12 +49,15 @@ jobs:
   build-anki-deck:
     name: Build Anki Deck (.apkg)
     runs-on: ubuntu-latest
+    needs: generate-audio
     permissions:
       contents: read
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
+        with:
+          ref: ${{ github.ref_name }}
 
       - name: Set up Python
         uses: actions/setup-python@v6
