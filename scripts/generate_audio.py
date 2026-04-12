@@ -637,6 +637,10 @@ VOCAB_WORDS = [
     ("hsk2_ta3",           "它"),
     ("hsk2_tizuqiu",       "踢足球"),
     ("hsk2_tiaowu",        "跳舞"),
+    # The five entries below share the same Chinese text as their HSK 1
+    # counterparts but carry distinct hsk2_ IDs because they appear as separate
+    # entries in the HSK 2 vocabulary list.  Separate word audio files are
+    # generated so that the Anki deck can embed them independently.
     ("hsk2_dadianhua",     "打电话"),
     ("hsk2_haochi",        "好吃"),
     ("hsk2_pingguo",       "苹果"),

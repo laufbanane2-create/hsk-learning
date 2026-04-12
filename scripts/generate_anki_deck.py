@@ -463,7 +463,11 @@ HSK2_MODEL = genanki.Model(
 
 def make_note(vocab_id, chinese, pinyin, english, sentence, sent_py, sent_en,
               audio_tag, word_audio_tag):
-    """Return a genanki.Note for one vocabulary item."""
+    """Return a genanki.Note for one vocabulary item.
+
+    audio_tag      – [sound:hsk2_xxx.mp3] for the example sentence, or empty.
+    word_audio_tag – [sound:hsk2_xxx_word.mp3] for the spoken word alone, or empty.
+    """
     return genanki.Note(
         model=HSK2_MODEL,
         fields=[
