@@ -690,26 +690,24 @@ CSS = """
 hr { border: none; border-top: 1px solid #ddd; margin: 16px 0; }
 """
 
-HSK2_MODEL = genanki.Model(
-    MODEL_ID,
-    "HSK 2 Vocabulary",
-    fields=[
-        {"name": "VocabId"},
-        {"name": "Chinese"},
-        {"name": "Pinyin"},
-        {"name": "English"},
-        {"name": "Sentence"},
-        {"name": "SentencePinyin"},
-        {"name": "SentenceEnglish"},
-        {"name": "Audio"},        # [sound:hsk2_xxx.mp3] or empty
-        {"name": "WordAudio"},    # [sound:hsk2_xxx_word.mp3] or empty
-    ],
-    templates=[
-        # ── Card 1: Word Recognition ─────────────────────────────────────
-        {
-            "name": "Word",
-            "qfmt": '<div class="chinese">{{Chinese}}</div>',
-            "afmt": """\
+_VOCAB_FIELDS = [
+    {"name": "VocabId"},
+    {"name": "Chinese"},
+    {"name": "Pinyin"},
+    {"name": "English"},
+    {"name": "Sentence"},
+    {"name": "SentencePinyin"},
+    {"name": "SentenceEnglish"},
+    {"name": "Audio"},      # [sound:{vocab_id}.mp3] or empty
+    {"name": "WordAudio"},  # [sound:{vocab_id}_word.mp3] or empty
+]
+
+_CARD_TEMPLATES = [
+    # ── Card 1: Word Recognition ─────────────────────────────────────
+    {
+        "name": "Word",
+        "qfmt": '<div class="chinese">{{Chinese}}</div>',
+        "afmt": """\
 {{FrontSide}}
 <hr>
 <div class="pinyin">{{Pinyin}}</div>
@@ -721,14 +719,14 @@ HSK2_MODEL = genanki.Model(
 <div class="sentence-en">{{SentenceEnglish}}</div>
 {{Audio}}
 """,
-        },
-        # ── Card 2: Sentence Reading ─────────────────────────────────────
-        {
-            "name": "Sentence",
-            "qfmt": """\
+    },
+    # ── Card 2: Sentence Reading ─────────────────────────────────────
+    {
+        "name": "Sentence",
+        "qfmt": """\
 <div class="sentence-zh">{{Sentence}}</div>
 """,
-            "afmt": """\
+        "afmt": """\
 {{FrontSide}}
 <hr>
 <div class="sentence-py">{{SentencePinyin}}</div>
@@ -740,11 +738,11 @@ HSK2_MODEL = genanki.Model(
 {{WordAudio}}
 {{Audio}}
 """,
-        },
-        # ── Card 3: Audio Listening ──────────────────────────────────────
-        {
-            "name": "Audio",
-            "qfmt": """\
+    },
+    # ── Card 3: Audio Listening ──────────────────────────────────────
+    {
+        "name": "Audio",
+        "qfmt": """\
 {{#Audio}}
 <div style="font-size:64px">🔊</div>
 {{Audio}}
@@ -754,7 +752,7 @@ HSK2_MODEL = genanki.Model(
 [not available for this card]
 {{/Audio}}
 """,
-            "afmt": """\
+        "afmt": """\
 {{FrontSide}}
 <hr>
 <div class="sentence-zh">{{Sentence}}</div>
@@ -766,8 +764,14 @@ HSK2_MODEL = genanki.Model(
 <div class="english">{{English}}</div>
 {{WordAudio}}
 """,
-        },
-    ],
+    },
+]
+
+HSK2_MODEL = genanki.Model(
+    MODEL_ID,
+    "HSK 2 Vocabulary",
+    fields=_VOCAB_FIELDS,
+    templates=_CARD_TEMPLATES,
     css=CSS,
 )
 
@@ -775,18 +779,8 @@ HSK2_MODEL = genanki.Model(
 HSK1_MODEL = genanki.Model(
     HSK1_MODEL_ID,
     "HSK 1 Vocabulary",
-    fields=[
-        {"name": "VocabId"},
-        {"name": "Chinese"},
-        {"name": "Pinyin"},
-        {"name": "English"},
-        {"name": "Sentence"},
-        {"name": "SentencePinyin"},
-        {"name": "SentenceEnglish"},
-        {"name": "Audio"},        # [sound:hsk1_xxx.mp3] or empty
-        {"name": "WordAudio"},    # [sound:hsk1_xxx_word.mp3] or empty
-    ],
-    templates=HSK2_MODEL.templates,
+    fields=_VOCAB_FIELDS,
+    templates=_CARD_TEMPLATES,
     css=CSS,
 )
 
