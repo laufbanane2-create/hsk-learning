@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Generate an Anki deck (.apkg) for HSK 2 vocabulary.
+Generate an Anki deck (.apkg) for HSK vocabulary.
 
 The deck contains three card types per vocabulary entry:
   1. Word card   – front: Chinese character(s); back: pinyin + English + word audio + sentence + sentence audio
@@ -11,9 +11,10 @@ Audio files are taken from audio/ at the repository root (one MP3 per vocab entr
 that contains the spoken example sentence).
 
 Usage:
-    python3 scripts/generate_anki_deck.py [--output OUTPUT]
+    python3 scripts/generate_anki_deck.py [--level LEVEL] [--output OUTPUT]
 
-    --output  Path for the .apkg file (default: hsk2.apkg next to this script)
+    --level   hsk1 or hsk2 (default: hsk2)
+    --output  Path for the .apkg file (default: hsk<level>.apkg next to this script)
 
 Requirements:
     pip install genanki
@@ -35,6 +36,313 @@ except ImportError:
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 REPO_ROOT = os.path.dirname(SCRIPT_DIR)
 AUDIO_DIR = os.path.join(REPO_ROOT, "audio")
+
+# ---------------------------------------------------------------------------
+# HSK 1 vocabulary
+# Fields: (id, chinese, pinyin, english, sentence, sentence_pinyin, sentence_english)
+# ---------------------------------------------------------------------------
+HSK1_VOCAB = [
+    ("hsk1_ai",        "爱",     "ài",             "love",
+     "我爱我的家人。",               "Wǒ ài wǒ de jiārén.",                      "I love my family."),
+    ("hsk1_ba",        "爸爸",   "bàba",           "dad / father",
+     "我爸爸在家工作。",             "Wǒ bàba zài jiā gōngzuò.",                 "My dad works at home."),
+    ("hsk1_beizi",     "杯子",   "bēizi",          "cup",
+     "请给我一个杯子。",             "Qǐng gěi wǒ yīgè bēizi.",                  "Please give me a cup."),
+    ("hsk1_bu",        "不",     "bù",             "not / no",
+     "我不喝咖啡，我喝茶。",         "Wǒ bù hē kāfēi, wǒ hē chá.",              "I don't drink coffee; I drink tea."),
+    ("hsk1_chi",       "吃",     "chī",            "eat",
+     "我喜欢吃米饭。",               "Wǒ xǐhuān chī mǐfàn.",                     "I like eating rice."),
+    ("hsk1_da",        "大",     "dà",             "big / large",
+     "这个苹果很大。",               "Zhège píngguǒ hěn dà.",                    "This apple is very big."),
+    ("hsk1_dianshi",   "电视",   "diànshì",        "TV / television",
+     "我每天晚上看电视。",           "Wǒ měitiān wǎnshàng kàn diànshì.",         "I watch TV every evening."),
+    ("hsk1_diannao",   "电脑",   "diànnǎo",        "computer",
+     "他用电脑工作。",               "Tā yòng diànnǎo gōngzuò.",                 "He uses a computer for work."),
+    ("hsk1_gou",       "狗",     "gǒu",            "dog",
+     "我家有一只狗。",               "Wǒ jiā yǒu yī zhī gǒu.",                   "My family has a dog."),
+    ("hsk1_hao",       "好",     "hǎo",            "good / well",
+     "今天天气很好。",               "Jīntiān tiānqì hěn hǎo.",                  "The weather is very good today."),
+    ("hsk1_he",        "喝",     "hē",             "drink",
+     "我想喝一杯茶。",               "Wǒ xiǎng hē yī bēi chá.",                  "I want to drink a cup of tea."),
+    ("hsk1_hen",       "很",     "hěn",            "very",
+     "我今天很高兴。",               "Wǒ jīntiān hěn gāoxìng.",                  "I am very happy today."),
+    ("hsk1_hui",       "会",     "huì",            "can / know how to",
+     "我会说一点汉语。",             "Wǒ huì shuō yīdiǎn Hànyǔ.",               "I can speak a little Chinese."),
+    ("hsk1_jia",       "家",     "jiā",            "home / family",
+     "我家在北京附近。",             "Wǒ jiā zài Běijīng fùjìn.",                "My home is near Beijing."),
+    ("hsk1_jintian",   "今天",   "jīntiān",        "today",
+     "今天是星期几？",               "Jīntiān shì xīngqī jǐ?",                   "What day of the week is today?"),
+    ("hsk1_kan",       "看",     "kàn",            "look / watch / read",
+     "我们一起看书吧。",             "Wǒmen yīqǐ kàn shū ba.",                   "Let's read together."),
+    ("hsk1_lai",       "来",     "lái",            "come",
+     "请你来我家吃饭。",             "Qǐng nǐ lái wǒ jiā chīfàn.",               "Please come to my home for dinner."),
+    ("hsk1_laoshi",    "老师",   "lǎoshī",         "teacher",
+     "我的老师很好。",               "Wǒ de lǎoshī hěn hǎo.",                    "My teacher is very good."),
+    ("hsk1_mama",      "妈妈",   "māma",           "mum / mother",
+     "我妈妈在家做饭。",             "Wǒ māma zài jiā zuòfàn.",                  "My mum cooks at home."),
+    ("hsk1_mao",       "猫",     "māo",            "cat",
+     "我有一只猫。",                 "Wǒ yǒu yī zhī māo.",                       "I have a cat."),
+    ("hsk1_meiyou",    "没有",   "méiyǒu",         "don't have / there is no",
+     "我今天没有时间。",             "Wǒ jīntiān méiyǒu shíjiān.",               "I don't have time today."),
+    ("hsk1_mingtian",  "明天",   "míngtiān",       "tomorrow",
+     "明天我去学校。",               "Míngtiān wǒ qù xuéxiào.",                  "I'm going to school tomorrow."),
+    ("hsk1_nihao",     "你好",   "nǐ hǎo",         "hello",
+     "你好，我叫小明。",             "Nǐ hǎo, wǒ jiào Xiǎo Míng.",               "Hello, my name is Xiao Ming."),
+    ("hsk1_pengyou",   "朋友",   "péngyou",        "friend",
+     "他是我的好朋友。",             "Tā shì wǒ de hǎo péngyou.",                "He is my good friend."),
+    ("hsk1_qu",        "去",     "qù",             "go",
+     "我们去北京旅游。",             "Wǒmen qù Běijīng lǚyóu.",                  "We are going to Beijing on a trip."),
+    ("hsk1_shi",       "是",     "shì",            "is / am / are",
+     "我是学生。",                   "Wǒ shì xuéshēng.",                          "I am a student."),
+    ("hsk1_shu",       "书",     "shū",            "book",
+     "这本书很有意思。",             "Zhè běn shū hěn yǒuyìsi.",                 "This book is very interesting."),
+    ("hsk1_shui",      "水",     "shuǐ",           "water",
+     "请给我一杯水。",               "Qǐng gěi wǒ yī bēi shuǐ.",                 "Please give me a glass of water."),
+    ("hsk1_xuesheng",  "学生",   "xuéshēng",       "student",
+     "他们都是学生。",               "Tāmen dōu shì xuéshēng.",                   "They are all students."),
+    ("hsk1_you",       "有",     "yǒu",            "have / there is",
+     "你有兄弟姐妹吗？",             "Nǐ yǒu xiōngdì jiěmèi ma?",                "Do you have brothers and sisters?"),
+    ("hsk1_zai",       "在",     "zài",            "at / in / be located at",
+     "他在哪里工作？",               "Tā zài nǎlǐ gōngzuò?",                     "Where does he work?"),
+    ("hsk1_zaijian",   "再见",   "zàijiàn",        "goodbye",
+     "明天见，再见！",               "Míngtiān jiàn, zàijiàn!",                   "See you tomorrow, goodbye!"),
+    ("hsk1_zhongguo",  "中国",   "Zhōngguó",       "China",
+     "我来自中国。",                 "Wǒ lái zì Zhōngguó.",                       "I come from China."),
+    ("hsk1_xuexi",     "学习",   "xuéxí",          "study / learn",
+     "我每天学习汉语。",             "Wǒ měitiān xuéxí Hànyǔ.",                  "I study Chinese every day."),
+    ("hsk1_tianqi",    "天气",   "tiānqì",         "weather",
+     "今天天气怎么样？",             "Jīntiān tiānqì zěnmeyàng?",                "What is the weather like today?"),
+    ("hsk1_ba2",       "八",     "bā",             "eight",
+     "我有八本书。",                 "Wǒ yǒu bā běn shū.",                        "I have eight books."),
+    ("hsk1_beijing",   "北京",   "Běijīng",        "Beijing",
+     "北京是中国的首都。",           "Běijīng shì Zhōngguó de shǒudū.",           "Beijing is the capital of China."),
+    ("hsk1_bukeqi",    "不客气", "bù kèqi",        "you're welcome",
+     "谢谢你！不客气。",             "Xièxie nǐ! Bù kèqi.",                       "Thank you! You're welcome."),
+    ("hsk1_cai",       "菜",     "cài",            "dish / vegetable",
+     "这道菜很好吃。",               "Zhè dào cài hěn hǎochī.",                   "This dish is very delicious."),
+    ("hsk1_cha",       "茶",     "chá",            "tea",
+     "我每天喝茶。",                 "Wǒ měitiān hē chá.",                        "I drink tea every day."),
+    ("hsk1_chuzuche",  "出租车", "chūzūchē",       "taxi",
+     "我坐出租车去机场。",           "Wǒ zuò chūzūchē qù jīchǎng.",               "I take a taxi to the airport."),
+    ("hsk1_de",        "的",     "de",             "possessive / descriptive particle",
+     "这是我的书。",                 "Zhè shì wǒ de shū.",                        "This is my book."),
+    ("hsk1_dongxi",    "东西",   "dōngxi",         "thing / stuff",
+     "你买了什么东西？",             "Nǐ mǎi le shénme dōngxi?",                  "What did you buy?"),
+    ("hsk1_dou",       "都",     "dōu",            "all / both",
+     "我们都是学生。",               "Wǒmen dōu shì xuéshēng.",                   "We are all students."),
+    ("hsk1_duibuqi",   "对不起", "duìbuqǐ",        "sorry / excuse me",
+     "对不起，我来晚了。",           "Duìbuqǐ, wǒ lái wǎn le.",                   "Sorry, I'm late."),
+    ("hsk1_duo",       "多",     "duō",            "many / much",
+     "这里有很多人。",               "Zhèlǐ yǒu hěn duō rén.",                    "There are many people here."),
+    ("hsk1_duoshao",   "多少",   "duōshao",        "how many / how much",
+     "这个多少钱？",                 "Zhège duōshao qián?",                        "How much does this cost?"),
+    ("hsk1_e",         "饿",     "è",              "hungry",
+     "我饿了，我们去吃饭吧。",       "Wǒ è le, wǒmen qù chīfàn ba.",              "I'm hungry, let's go eat."),
+    ("hsk1_er",        "二",     "èr",             "two",
+     "我有两个哥哥。",               "Wǒ yǒu liǎng gè gēgē.",                     "I have two older brothers."),
+    ("hsk1_feiji",     "飞机",   "fēijī",          "airplane",
+     "我坐飞机去上海。",             "Wǒ zuò fēijī qù Shànghǎi.",                 "I take a plane to Shanghai."),
+    ("hsk1_fenzhong",  "分钟",   "fēnzhōng",       "minute",
+     "请等我五分钟。",               "Qǐng děng wǒ wǔ fēnzhōng.",                 "Please wait five minutes for me."),
+    ("hsk1_gaoxing",   "高兴",   "gāoxìng",        "happy / glad",
+     "见到你我很高兴。",             "Jiàn dào nǐ wǒ hěn gāoxìng.",               "I'm very happy to see you."),
+    ("hsk1_ge",        "个",     "gè",             "general measure word",
+     "请给我一个苹果。",             "Qǐng gěi wǒ yīgè píngguǒ.",                "Please give me an apple."),
+    ("hsk1_gongzuo",   "工作",   "gōngzuò",        "work / job",
+     "他在银行工作。",               "Tā zài yínháng gōngzuò.",                   "He works at a bank."),
+    ("hsk1_hanyu",     "汉语",   "Hànyǔ",          "Chinese (language)",
+     "我在学习汉语。",               "Wǒ zài xuéxí Hànyǔ.",                       "I am studying Chinese."),
+    ("hsk1_hao2",      "号",     "hào",            "date / number / size",
+     "今天几号？",                   "Jīntiān jǐ hào?",                           "What date is today?"),
+    ("hsk1_he2",       "和",     "hé",             "and / with",
+     "我和你是朋友。",               "Wǒ hé nǐ shì péngyou.",                     "You and I are friends."),
+    ("hsk1_houmian",   "后面",   "hòumiàn",        "behind / back",
+     "他在我后面。",                 "Tā zài wǒ hòumiàn.",                        "He is behind me."),
+    ("hsk1_hui2",      "回",     "huí",            "return / go back",
+     "我下午回家。",                 "Wǒ xiàwǔ huí jiā.",                         "I will go home in the afternoon."),
+    ("hsk1_ji",        "几",     "jǐ",             "how many / several",
+     "你有几个朋友？",               "Nǐ yǒu jǐ gè péngyou?",                     "How many friends do you have?"),
+    ("hsk1_jiao",      "叫",     "jiào",           "be called / call",
+     "我叫小明。",                   "Wǒ jiào Xiǎo Míng.",                        "My name is Xiao Ming."),
+    ("hsk1_jiu",       "九",     "jiǔ",            "nine",
+     "一个月有三十天，我工作了九天。", "Yīgè yuè yǒu sānshí tiān, wǒ gōngzuò le jiǔ tiān.", "A month has thirty days; I worked for nine days."),
+    ("hsk1_kai",       "开",     "kāi",            "open / start",
+     "请开门。",                     "Qǐng kāi mén.",                             "Please open the door."),
+    ("hsk1_kanjian",   "看见",   "kànjiàn",        "see / catch sight of",
+     "我看见他了。",                 "Wǒ kànjiàn tā le.",                         "I saw him."),
+    ("hsk1_kuai",      "块",     "kuài",           "yuan (currency) / lump",
+     "这个苹果一块钱。",             "Zhège píngguǒ yī kuài qián.",               "This apple costs one yuan."),
+    ("hsk1_le",        "了",     "le",             "completed action particle",
+     "我吃了早饭。",                 "Wǒ chī le zǎofàn.",                         "I have eaten breakfast."),
+    ("hsk1_li",        "里",     "lǐ",             "inside / in",
+     "书包里有很多书。",             "Shūbāo lǐ yǒu hěn duō shū.",               "There are many books in the school bag."),
+    ("hsk1_liang",     "两",     "liǎng",          "two (for pairs)",
+     "请给我两杯茶。",               "Qǐng gěi wǒ liǎng bēi chá.",               "Please give me two cups of tea."),
+    ("hsk1_ling",      "零",     "líng",           "zero",
+     "今天气温是零度。",             "Jīntiān qìwēn shì líng dù.",               "The temperature today is zero degrees."),
+    ("hsk1_liu",       "六",     "liù",            "six",
+     "一个星期有七天，我上了六天课。", "Yīgè xīngqī yǒu qī tiān, wǒ shàng le liù tiān kè.", "A week has seven days; I had class for six days."),
+    ("hsk1_lu",        "路",     "lù",             "road / way / route",
+     "这条路很长。",                 "Zhè tiáo lù hěn cháng.",                    "This road is very long."),
+    ("hsk1_ma",        "吗",     "ma",             "question particle",
+     "你喜欢吃饺子吗？",             "Nǐ xǐhuān chī jiǎozi ma?",                  "Do you like eating dumplings?"),
+    ("hsk1_meiguanxi", "没关系", "méi guānxi",     "it doesn't matter / no problem",
+     "没关系，不要担心。",           "Méi guānxi, bùyào dānxīn.",                 "It doesn't matter, don't worry."),
+    ("hsk1_meimei",    "妹妹",   "mèimei",         "younger sister",
+     "我妹妹很可爱。",               "Wǒ mèimei hěn kě'ài.",                      "My younger sister is very cute."),
+    ("hsk1_men",       "们",     "men",            "plural suffix",
+     "同学们，我们开始上课吧。",     "Tóngxuémen, wǒmen kāishǐ shàngkè ba.",     "Classmates, let's start class."),
+    ("hsk1_mingzi",    "名字",   "míngzi",         "name",
+     "你的名字叫什么？",             "Nǐ de míngzi jiào shénme?",                 "What is your name?"),
+    ("hsk1_na",        "哪",     "nǎ",             "which",
+     "你喜欢哪个颜色？",             "Nǐ xǐhuān nǎ gè yánsè?",                   "Which colour do you like?"),
+    ("hsk1_nar",       "哪儿",   "nǎr",            "where",
+     "你要去哪儿？",                 "Nǐ yào qù nǎr?",                            "Where are you going?"),
+    ("hsk1_na2",       "那",     "nà",             "that",
+     "那是我的书。",                 "Nà shì wǒ de shū.",                         "That is my book."),
+    ("hsk1_ne",        "呢",     "ne",             "question particle / and you?",
+     "我很好，你呢？",               "Wǒ hěn hǎo, nǐ ne?",                        "I'm fine, and you?"),
+    ("hsk1_ni",        "你",     "nǐ",             "you",
+     "你好！你叫什么名字？",         "Nǐ hǎo! Nǐ jiào shénme míngzi?",            "Hello! What is your name?"),
+    ("hsk1_nian",      "年",     "nián",           "year",
+     "今年我二十岁。",               "Jīnnián wǒ èrshí suì.",                     "I am twenty years old this year."),
+    ("hsk1_nuer",      "女儿",   "nǚér",           "daughter",
+     "他有一个可爱的女儿。",         "Tā yǒu yīgè kě'ài de nǚér.",               "He has a lovely daughter."),
+    ("hsk1_nuren",     "女人",   "nǚrén",          "woman",
+     "那位女人是我的老师。",         "Nà wèi nǚrén shì wǒ de lǎoshī.",           "That woman is my teacher."),
+    ("hsk1_piaoliang", "漂亮",   "piàoliang",      "beautiful / pretty",
+     "这朵花很漂亮。",               "Zhè duǒ huā hěn piàoliang.",                "This flower is very beautiful."),
+    ("hsk1_qi",        "七",     "qī",             "seven",
+     "一个星期有七天。",             "Yīgè xīngqī yǒu qī tiān.",                  "A week has seven days."),
+    ("hsk1_qian",      "钱",     "qián",           "money",
+     "你有多少钱？",                 "Nǐ yǒu duōshao qián?",                      "How much money do you have?"),
+    ("hsk1_qianmian",  "前面",   "qiánmiàn",       "in front / ahead",
+     "学校就在前面。",               "Xuéxiào jiù zài qiánmiàn.",                 "The school is just ahead."),
+    ("hsk1_qing",      "请",     "qǐng",           "please / invite",
+     "请坐！",                       "Qǐng zuò!",                                 "Please sit down!"),
+    ("hsk1_re",        "热",     "rè",             "hot",
+     "今天天气很热。",               "Jīntiān tiānqì hěn rè.",                    "The weather is very hot today."),
+    ("hsk1_ren",       "人",     "rén",            "person / people",
+     "这里有很多人。",               "Zhèlǐ yǒu hěn duō rén.",                    "There are many people here."),
+    ("hsk1_ri",        "日",     "rì",             "day / date / sun",
+     "今天是几月几日？",             "Jīntiān shì jǐ yuè jǐ rì?",                 "What is today's date?"),
+    ("hsk1_san",       "三",     "sān",            "three",
+     "我家有三口人。",               "Wǒ jiā yǒu sān kǒu rén.",                   "There are three people in my family."),
+    ("hsk1_shangdian", "商店",   "shāngdiàn",      "shop / store",
+     "商店几点开门？",               "Shāngdiàn jǐ diǎn kāimén?",                 "What time does the shop open?"),
+    ("hsk1_shang",     "上",     "shàng",          "on / above / top",
+     "书在桌子上。",                 "Shū zài zhuōzi shàng.",                     "The book is on the table."),
+    ("hsk1_shangwu",   "上午",   "shàngwǔ",        "morning / a.m.",
+     "我上午去学校上课。",           "Wǒ shàngwǔ qù xuéxiào shàngkè.",            "I go to school in the morning."),
+    ("hsk1_shao",      "少",     "shǎo",           "few / little / less",
+     "这里人很少，很安静。",         "Zhèlǐ rén hěn shǎo, hěn ānjìng.",           "There are very few people here; it's very quiet."),
+    ("hsk1_shei",      "谁",     "shéi",           "who",
+     "那个人是谁？",                 "Nà gè rén shì shéi?",                        "Who is that person?"),
+    ("hsk1_shenme",    "什么",   "shénme",         "what",
+     "你想吃什么？",                 "Nǐ xiǎng chī shénme?",                      "What do you want to eat?"),
+    ("hsk1_shengri",   "生日",   "shēngrì",        "birthday",
+     "今天是我的生日！",             "Jīntiān shì wǒ de shēngrì!",                "Today is my birthday!"),
+    ("hsk1_shihou",    "时候",   "shíhòu",         "time / moment / when",
+     "你什么时候来我家？",           "Nǐ shénme shíhòu lái wǒ jiā?",              "When will you come to my home?"),
+    ("hsk1_si",        "四",     "sì",             "four",
+     "一年有四个季节。",             "Yī nián yǒu sì gè jìjié.",                  "A year has four seasons."),
+    ("hsk1_sui",       "岁",     "suì",            "years old",
+     "他今年二十五岁了。",           "Tā jīnnián èrshíwǔ suì le.",                "He is twenty-five years old this year."),
+    ("hsk1_shuijiao",  "睡觉",   "shuìjiào",       "sleep",
+     "我每天晚上十一点睡觉。",       "Wǒ měitiān wǎnshàng shíyī diǎn shuìjiào.", "I go to sleep at eleven every night."),
+    ("hsk1_shuiguo",   "水果",   "shuǐguǒ",        "fruit",
+     "我每天吃水果，对身体好。",     "Wǒ měitiān chī shuǐguǒ, duì shēntǐ hǎo.", "I eat fruit every day; it's good for your health."),
+    ("hsk1_shuo",      "说",     "shuō",           "speak / say",
+     "请说慢一点儿。",               "Qǐng shuō màn yīdiǎnr.",                    "Please speak a little more slowly."),
+    ("hsk1_ta",        "他",     "tā",             "he / him",
+     "他是我的老师。",               "Tā shì wǒ de lǎoshī.",                      "He is my teacher."),
+    ("hsk1_ta2",       "她",     "tā",             "she / her",
+     "她是我的好朋友。",             "Tā shì wǒ de hǎo péngyou.",                 "She is my good friend."),
+    ("hsk1_tai",       "太",     "tài",            "too / extremely",
+     "这个太贵了，我买不起。",       "Zhège tài guì le, wǒ mǎi bu qǐ.",           "This is too expensive; I can't afford it."),
+    ("hsk1_ting",      "听",     "tīng",           "listen / hear",
+     "我喜欢听音乐。",               "Wǒ xǐhuān tīng yīnyuè.",                    "I like listening to music."),
+    ("hsk1_tongxue",   "同学",   "tóngxué",        "classmate",
+     "他是我的同学。",               "Tā shì wǒ de tóngxué.",                     "He is my classmate."),
+    ("hsk1_wei",       "喂",     "wèi",            "hello (on phone) / hey",
+     "喂，你好，请问李老师在吗？",   "Wèi, nǐ hǎo, qǐngwèn Lǐ lǎoshī zài ma?",  "Hello, is Teacher Li there?"),
+    ("hsk1_wo",        "我",     "wǒ",             "I / me",
+     "我是一名学生。",               "Wǒ shì yī míng xuéshēng.",                  "I am a student."),
+    ("hsk1_women",     "我们",   "wǒmen",          "we / us",
+     "我们一起去图书馆吧。",         "Wǒmen yīqǐ qù túshūguǎn ba.",               "Let's go to the library together."),
+    ("hsk1_wu",        "五",     "wǔ",             "five",
+     "我有五本中文书。",             "Wǒ yǒu wǔ běn Zhōngwén shū.",               "I have five Chinese books."),
+    ("hsk1_xia",       "下",     "xià",            "under / below",
+     "猫在桌子下面。",               "Māo zài zhuōzi xiàmiàn.",                   "The cat is under the table."),
+    ("hsk1_xiawu",     "下午",   "xiàwǔ",          "afternoon / p.m.",
+     "下午我去图书馆看书。",         "Xiàwǔ wǒ qù túshūguǎn kàn shū.",            "I go to the library to read in the afternoon."),
+    ("hsk1_xiayu",     "下雨",   "xià yǔ",         "to rain",
+     "今天下雨了，记得带伞。",       "Jīntiān xià yǔ le, jìde dài sǎn.",          "It's raining today; remember to bring an umbrella."),
+    ("hsk1_xiansheng", "先生",   "xiānshēng",      "Mr. / husband / gentleman",
+     "王先生，您好！",               "Wáng xiānshēng, nín hǎo!",                  "Hello, Mr. Wang!"),
+    ("hsk1_xianzai",   "现在",   "xiànzài",        "now",
+     "现在几点了？",                 "Xiànzài jǐ diǎn le?",                        "What time is it now?"),
+    ("hsk1_xiang",     "想",     "xiǎng",          "want / think / miss",
+     "我想回家休息。",               "Wǒ xiǎng huí jiā xiūxi.",                   "I want to go home and rest."),
+    ("hsk1_xiao",      "小",     "xiǎo",           "small / little",
+     "这个房间很小，只有一张床。",   "Zhège fángjiān hěn xiǎo, zhǐ yǒu yī zhāng chuáng.", "This room is very small; there is only one bed."),
+    ("hsk1_xiaojie",   "小姐",   "xiǎojiě",        "Miss / young lady",
+     "请问，小姐，洗手间在哪里？",   "Qǐngwèn, xiǎojiě, xǐshǒujiān zài nǎlǐ?",  "Excuse me, miss, where is the restroom?"),
+    ("hsk1_xie",       "些",     "xiē",            "some / a few",
+     "我买了一些水果和蔬菜。",       "Wǒ mǎi le yīxiē shuǐguǒ hé shūcài.",       "I bought some fruit and vegetables."),
+    ("hsk1_xiexie",    "谢谢",   "xièxie",         "thank you",
+     "谢谢你的帮助！",               "Xièxie nǐ de bāngzhù!",                     "Thank you for your help!"),
+    ("hsk1_xingqi",    "星期",   "xīngqī",         "week",
+     "这个星期我有很多作业。",       "Zhège xīngqī wǒ yǒu hěn duō zuòyè.",        "I have a lot of homework this week."),
+    ("hsk1_yi",        "一",     "yī",             "one",
+     "我只有一个苹果。",             "Wǒ zhǐ yǒu yīgè píngguǒ.",                 "I only have one apple."),
+    ("hsk1_yidianr",   "一点儿", "yīdiǎnr",        "a little / a bit",
+     "我会说一点儿汉语。",           "Wǒ huì shuō yīdiǎnr Hànyǔ.",               "I can speak a little Chinese."),
+    ("hsk1_yifu",      "衣服",   "yīfu",           "clothes",
+     "我要买一些新衣服。",           "Wǒ yào mǎi yīxiē xīn yīfu.",               "I want to buy some new clothes."),
+    ("hsk1_yisheng",   "医生",   "yīshēng",        "doctor",
+     "我头疼，要去看医生。",         "Wǒ tóuténg, yào qù kàn yīshēng.",           "I have a headache and need to see a doctor."),
+    ("hsk1_yiyuan",    "医院",   "yīyuàn",         "hospital",
+     "医院在学校旁边。",             "Yīyuàn zài xuéxiào pángbiān.",              "The hospital is next to the school."),
+    ("hsk1_yizi",      "椅子",   "yǐzi",           "chair",
+     "请坐在椅子上等一下。",         "Qǐng zuò zài yǐzi shàng děng yīxià.",       "Please sit on the chair and wait."),
+    ("hsk1_yinwei",    "因为",   "yīnwèi",         "because",
+     "我喜欢汉语，因为它很有趣。",   "Wǒ xǐhuān Hànyǔ, yīnwèi tā hěn yǒuqù.",   "I like Chinese because it is very interesting."),
+    ("hsk1_yue",       "月",     "yuè",            "month",
+     "一年有十二个月。",             "Yī nián yǒu shí'èr gè yuè.",               "A year has twelve months."),
+    ("hsk1_zenme",     "怎么",   "zěnme",          "how / why",
+     "这个字怎么写？",               "Zhège zì zěnme xiě?",                        "How do you write this character?"),
+    ("hsk1_zenmeyang", "怎么样", "zěnmeyàng",      "how / how about / what ... like",
+     "你觉得这个菜怎么样？",         "Nǐ juéde zhège cài zěnmeyàng?",              "How do you find this dish?"),
+    ("hsk1_zhe",       "这",     "zhè",            "this",
+     "这是什么？",                   "Zhè shì shénme?",                            "What is this?"),
+    ("hsk1_zhongwu",   "中午",   "zhōngwǔ",        "noon / midday",
+     "中午我们一起去吃饭吧。",       "Zhōngwǔ wǒmen yīqǐ qù chīfàn ba.",          "Let's go eat together at noon."),
+    ("hsk1_zhu",       "住",     "zhù",            "live / reside",
+     "你住在哪里？",                 "Nǐ zhù zài nǎlǐ?",                           "Where do you live?"),
+    ("hsk1_zhuozi",    "桌子",   "zhuōzi",         "table / desk",
+     "书放在桌子上。",               "Shū fàng zài zhuōzi shàng.",                "Put the book on the table."),
+    ("hsk1_ben",       "本",     "běn",            "measure word for books",
+     "我买了三本书。",               "Wǒ mǎi le sān běn shū.",                    "I bought three books."),
+    ("hsk1_dian",      "点",     "diǎn",           "o'clock / point / a bit",
+     "现在是三点。",                 "Xiànzài shì sān diǎn.",                     "It is now three o'clock."),
+    ("hsk1_dianying",  "电影",   "diànyǐng",       "movie / film",
+     "我周末喜欢看电影。",           "Wǒ zhōumò xǐhuān kàn diànyǐng.",            "I like watching movies on weekends."),
+    ("hsk1_erzi",      "儿子",   "érzi",           "son",
+     "他有一个聪明的儿子。",         "Tā yǒu yīgè cōngming de érzi.",              "He has an intelligent son."),
+    ("hsk1_zi",        "字",     "zì",             "character / word / writing",
+     "这个字怎么写？",               "Zhège zì zěnme xiě?",                        "How do you write this character?"),
+    ("hsk1_dadianhua", "打电话", "dǎ diànhuà",     "make a phone call",
+     "我给妈妈打电话。",             "Wǒ gěi māma dǎ diànhuà.",                   "I call my mum."),
+    ("hsk1_pingguo",   "苹果",   "píngguǒ",        "apple",
+     "我每天吃一个苹果。",           "Wǒ měitiān chī yīgè píngguǒ.",              "I eat one apple every day."),
+    ("hsk1_xigua",     "西瓜",   "xīguā",          "watermelon",
+     "夏天吃西瓜很解渴。",           "Xiàtiān chī xīguā hěn jiěkě.",              "Eating watermelon in summer is very refreshing."),
+    ("hsk1_zuotian",   "昨天",   "zuótiān",        "yesterday",
+     "昨天我见了一个老朋友。",       "Zuótiān wǒ jiàn le yīgè lǎo péngyou.",      "Yesterday I met an old friend."),
+    ("hsk1_haochi",    "好吃",   "hǎochī",         "delicious",
+     "这道菜非常好吃！",             "Zhè dào cài fēicháng hǎochī!",               "This dish is extremely delicious!"),
+]
 
 # ---------------------------------------------------------------------------
 # HSK 2 vocabulary — mirrors VocabData.kt
@@ -356,6 +664,8 @@ HSK2_VOCAB = [
 # ---------------------------------------------------------------------------
 # Stable IDs (generated once — must not change between runs)
 # ---------------------------------------------------------------------------
+HSK1_MODEL_ID = 1932067738
+HSK1_DECK_ID  = 1932067739
 MODEL_ID  = 1932067740
 DECK_ID   = 1932067741
 
@@ -380,26 +690,24 @@ CSS = """
 hr { border: none; border-top: 1px solid #ddd; margin: 16px 0; }
 """
 
-HSK2_MODEL = genanki.Model(
-    MODEL_ID,
-    "HSK 2 Vocabulary",
-    fields=[
-        {"name": "VocabId"},
-        {"name": "Chinese"},
-        {"name": "Pinyin"},
-        {"name": "English"},
-        {"name": "Sentence"},
-        {"name": "SentencePinyin"},
-        {"name": "SentenceEnglish"},
-        {"name": "Audio"},        # [sound:hsk2_xxx.mp3] or empty
-        {"name": "WordAudio"},    # [sound:hsk2_xxx_word.mp3] or empty
-    ],
-    templates=[
-        # ── Card 1: Word Recognition ─────────────────────────────────────
-        {
-            "name": "Word",
-            "qfmt": '<div class="chinese">{{Chinese}}</div>',
-            "afmt": """\
+_VOCAB_FIELDS = [
+    {"name": "VocabId"},
+    {"name": "Chinese"},
+    {"name": "Pinyin"},
+    {"name": "English"},
+    {"name": "Sentence"},
+    {"name": "SentencePinyin"},
+    {"name": "SentenceEnglish"},
+    {"name": "Audio"},      # [sound:{vocab_id}.mp3] or empty
+    {"name": "WordAudio"},  # [sound:{vocab_id}_word.mp3] or empty
+]
+
+_CARD_TEMPLATES = [
+    # ── Card 1: Word Recognition ─────────────────────────────────────
+    {
+        "name": "Word",
+        "qfmt": '<div class="chinese">{{Chinese}}</div>',
+        "afmt": """\
 {{FrontSide}}
 <hr>
 <div class="pinyin">{{Pinyin}}</div>
@@ -411,14 +719,14 @@ HSK2_MODEL = genanki.Model(
 <div class="sentence-en">{{SentenceEnglish}}</div>
 {{Audio}}
 """,
-        },
-        # ── Card 2: Sentence Reading ─────────────────────────────────────
-        {
-            "name": "Sentence",
-            "qfmt": """\
+    },
+    # ── Card 2: Sentence Reading ─────────────────────────────────────
+    {
+        "name": "Sentence",
+        "qfmt": """\
 <div class="sentence-zh">{{Sentence}}</div>
 """,
-            "afmt": """\
+        "afmt": """\
 {{FrontSide}}
 <hr>
 <div class="sentence-py">{{SentencePinyin}}</div>
@@ -430,11 +738,11 @@ HSK2_MODEL = genanki.Model(
 {{WordAudio}}
 {{Audio}}
 """,
-        },
-        # ── Card 3: Audio Listening ──────────────────────────────────────
-        {
-            "name": "Audio",
-            "qfmt": """\
+    },
+    # ── Card 3: Audio Listening ──────────────────────────────────────
+    {
+        "name": "Audio",
+        "qfmt": """\
 {{#Audio}}
 <div style="font-size:64px">🔊</div>
 {{Audio}}
@@ -444,7 +752,7 @@ HSK2_MODEL = genanki.Model(
 [not available for this card]
 {{/Audio}}
 """,
-            "afmt": """\
+        "afmt": """\
 {{FrontSide}}
 <hr>
 <div class="sentence-zh">{{Sentence}}</div>
@@ -456,21 +764,36 @@ HSK2_MODEL = genanki.Model(
 <div class="english">{{English}}</div>
 {{WordAudio}}
 """,
-        },
-    ],
+    },
+]
+
+HSK2_MODEL = genanki.Model(
+    MODEL_ID,
+    "HSK 2 Vocabulary",
+    fields=_VOCAB_FIELDS,
+    templates=_CARD_TEMPLATES,
     css=CSS,
 )
 
 
-def make_note(vocab_id, chinese, pinyin, english, sentence, sent_py, sent_en,
+HSK1_MODEL = genanki.Model(
+    HSK1_MODEL_ID,
+    "HSK 1 Vocabulary",
+    fields=_VOCAB_FIELDS,
+    templates=_CARD_TEMPLATES,
+    css=CSS,
+)
+
+
+def make_note(model, vocab_id, chinese, pinyin, english, sentence, sent_py, sent_en,
               audio_tag, word_audio_tag):
     """Return a genanki.Note for one vocabulary item.
 
-    audio_tag      – [sound:hsk2_xxx.mp3] for the example sentence, or empty.
-    word_audio_tag – [sound:hsk2_xxx_word.mp3] for the spoken word alone, or empty.
+    audio_tag      – [sound:xxx.mp3] for the example sentence, or empty.
+    word_audio_tag – [sound:xxx_word.mp3] for the spoken word alone, or empty.
     """
     return genanki.Note(
-        model=HSK2_MODEL,
+        model=model,
         fields=[
             vocab_id,
             chinese,
@@ -487,14 +810,14 @@ def make_note(vocab_id, chinese, pinyin, english, sentence, sent_py, sent_en,
     )
 
 
-def build_deck(output_path: str) -> None:
-    deck = genanki.Deck(DECK_ID, "HSK 2 Vocabulary")
+def build_deck(vocab_list, model, deck_id, deck_name, output_path: str) -> None:
+    deck = genanki.Deck(deck_id, deck_name)
     media_files = []
 
     missing_audio = []
     missing_word_audio = []
 
-    for entry in HSK2_VOCAB:
+    for entry in vocab_list:
         vocab_id, chinese, pinyin, english, sentence, sent_py, sent_en = entry
         mp3_name = f"{vocab_id}.mp3"
         mp3_path = os.path.join(AUDIO_DIR, mp3_name)
@@ -516,7 +839,7 @@ def build_deck(output_path: str) -> None:
             word_audio_tag = ""
             missing_word_audio.append(vocab_id)
 
-        note = make_note(vocab_id, chinese, pinyin, english,
+        note = make_note(model, vocab_id, chinese, pinyin, english,
                          sentence, sent_py, sent_en, audio_tag, word_audio_tag)
         deck.add_note(note)
 
@@ -524,7 +847,7 @@ def build_deck(output_path: str) -> None:
     package.media_files = media_files
     package.write_to_file(output_path)
 
-    total = len(HSK2_VOCAB)
+    total = len(vocab_list)
     with_audio = total - len(missing_audio)
     with_word_audio = total - len(missing_word_audio)
     print(f"Created {output_path}")
@@ -540,14 +863,24 @@ def build_deck(output_path: str) -> None:
               + ", ".join(missing_word_audio))
 
 
+_LEVELS = {
+    "hsk1": (HSK1_VOCAB, HSK1_MODEL, HSK1_DECK_ID, "HSK 1 Vocabulary"),
+    "hsk2": (HSK2_VOCAB, HSK2_MODEL, DECK_ID,       "HSK 2 Vocabulary"),
+}
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
-    default_output = os.path.join(SCRIPT_DIR, "hsk2.apkg")
-    parser.add_argument("--output", "-o", default=default_output,
-                        help=f"Output .apkg path (default: {default_output})")
+    parser.add_argument("--level", "-l", choices=list(_LEVELS), default="hsk2",
+                        help="Which HSK level to build (default: hsk2)")
+    parser.add_argument("--output", "-o", default=None,
+                        help="Output .apkg path (default: hsk<level>.apkg next to this script)")
     args = parser.parse_args()
-    build_deck(args.output)
+
+    vocab_list, model, deck_id, deck_name = _LEVELS[args.level]
+    output = args.output or os.path.join(SCRIPT_DIR, f"{args.level}.apkg")
+    build_deck(vocab_list, model, deck_id, deck_name, output)
 
 
 if __name__ == "__main__":

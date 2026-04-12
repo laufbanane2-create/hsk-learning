@@ -46,8 +46,8 @@ jobs:
             git push
           fi
 
-  build-anki-deck:
-    name: Build Anki Deck (.apkg)
+  build-anki-decks:
+    name: Build Anki Decks (.apkg)
     runs-on: ubuntu-latest
     needs: generate-audio
     permissions:
@@ -67,10 +67,20 @@ jobs:
       - name: Install genanki
         run: pip install genanki
 
-      - name: Build Anki deck
-        run: python3 scripts/generate_anki_deck.py --output hsk2.apkg
+      - name: Build HSK 1 Anki deck
+        run: python3 scripts/generate_anki_deck.py --level hsk1 --output hsk1.apkg
 
-      - name: Upload Anki deck artifact
+      - name: Build HSK 2 Anki deck
+        run: python3 scripts/generate_anki_deck.py --level hsk2 --output hsk2.apkg
+
+      - name: Upload HSK 1 Anki deck artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: hsk1-anki-deck
+          path: hsk1.apkg
+          retention-days: 30
+
+      - name: Upload HSK 2 Anki deck artifact
         uses: actions/upload-artifact@v7
         with:
           name: hsk2-anki-deck
