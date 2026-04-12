@@ -392,6 +392,7 @@ HSK2_MODEL = genanki.Model(
         {"name": "SentencePinyin"},
         {"name": "SentenceEnglish"},
         {"name": "Audio"},        # [sound:hsk2_xxx.mp3] or empty
+        {"name": "WordAudio"},    # [sound:hsk2_xxx_word.mp3] or empty
     ],
     templates=[
         # ── Card 1: Word Recognition ─────────────────────────────────────
@@ -403,6 +404,7 @@ HSK2_MODEL = genanki.Model(
 <hr>
 <div class="pinyin">{{Pinyin}}</div>
 <div class="english">{{English}}</div>
+{{WordAudio}}
 <br>
 <div class="sentence-zh">{{Sentence}}</div>
 <div class="sentence-py">{{SentencePinyin}}</div>
@@ -460,8 +462,12 @@ HSK2_MODEL = genanki.Model(
 
 
 def make_note(vocab_id, chinese, pinyin, english, sentence, sent_py, sent_en,
-              audio_tag):
-    """Return a genanki.Note for one vocabulary item."""
+              audio_tag, word_audio_tag):
+    """Return a genanki.Note for one vocabulary item.
+
+    audio_tag      – [sound:hsk2_xxx.mp3] for the example sentence, or empty.
+    word_audio_tag – [sound:hsk2_xxx_word.mp3] for the spoken word alone, or empty.
+    """
     return genanki.Note(
         model=HSK2_MODEL,
         fields=[
@@ -473,6 +479,7 @@ def make_note(vocab_id, chinese, pinyin, english, sentence, sent_py, sent_en,
             sent_py,
             sent_en,
             audio_tag,
+            word_audio_tag,
         ],
         # Stable GUID derived from the vocab id so re-runs update existing notes
         guid=genanki.guid_for(vocab_id),
@@ -484,6 +491,7 @@ def build_deck(output_path: str) -> None:
     media_files = []
 
     missing_audio = []
+    missing_word_audio = []
 
     for entry in HSK2_VOCAB:
         vocab_id, chinese, pinyin, english, sentence, sent_py, sent_en = entry
@@ -497,8 +505,18 @@ def build_deck(output_path: str) -> None:
             audio_tag = ""
             missing_audio.append(vocab_id)
 
+        word_mp3_name = f"{vocab_id}_word.mp3"
+        word_mp3_path = os.path.join(AUDIO_DIR, word_mp3_name)
+
+        if os.path.isfile(word_mp3_path):
+            word_audio_tag = f"[sound:{word_mp3_name}]"
+            media_files.append(word_mp3_path)
+        else:
+            word_audio_tag = ""
+            missing_word_audio.append(vocab_id)
+
         note = make_note(vocab_id, chinese, pinyin, english,
-                         sentence, sent_py, sent_en, audio_tag)
+                         sentence, sent_py, sent_en, audio_tag, word_audio_tag)
         deck.add_note(note)
 
     package = genanki.Package(deck)
@@ -507,13 +525,18 @@ def build_deck(output_path: str) -> None:
 
     total = len(HSK2_VOCAB)
     with_audio = total - len(missing_audio)
+    with_word_audio = total - len(missing_word_audio)
     print(f"Created {output_path}")
     print(f"  {total} vocabulary entries → {total * 3} cards "
           f"(3 per entry: Word / Sentence / Audio)")
-    print(f"  Audio files embedded: {with_audio}/{total}")
+    print(f"  Sentence audio files embedded: {with_audio}/{total}")
+    print(f"  Word audio files embedded: {with_word_audio}/{total}")
     if missing_audio:
-        print(f"  Missing audio ({len(missing_audio)}): "
+        print(f"  Missing sentence audio ({len(missing_audio)}): "
               + ", ".join(missing_audio))
+    if missing_word_audio:
+        print(f"  Missing word audio ({len(missing_word_audio)}): "
+              + ", ".join(missing_word_audio))
 
 
 def main() -> None:
