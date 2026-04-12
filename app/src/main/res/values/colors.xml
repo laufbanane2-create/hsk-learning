@@ -1,7 +1,0 @@
-<resources>
-    <color name="ic_launcher_background">#CDCDCD</color>
-    <color name="right_button">#4CAF50</color>
-    <color name="wrong_button">#F44336</color>
-    <color name="hsk_badge">#1565C0</color>
-    <color name="no_due_background">#E3F2FD</color>
-</resources>
