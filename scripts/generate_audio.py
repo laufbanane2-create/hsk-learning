@@ -330,6 +330,15 @@ VOCAB = [
     ("hsk2_ta3",             "这只猫很可爱，它叫小白。"),
     ("hsk2_tizuqiu",         "他们每周末一起踢足球。"),
     ("hsk2_tiaowu",          "她非常喜欢跳舞。"),
+    # The five entries below share the same Chinese text as their HSK 1
+    # counterparts but carry distinct hsk2_ IDs because they appear as separate
+    # entries in the HSK 2 vocabulary list.  Sentence audio files are generated
+    # here so that the Anki deck can embed them independently.
+    ("hsk2_dadianhua",       "我给妈妈打电话。"),
+    ("hsk2_haochi",          "这道菜非常好吃！"),
+    ("hsk2_pingguo",         "我每天吃一个苹果。"),
+    ("hsk2_xigua",           "夏天吃西瓜很解渴。"),
+    ("hsk2_zuotian",         "昨天我见了一个老朋友。"),
 ]
 
 # Word-level audio — just the spoken word for each vocabulary item.
