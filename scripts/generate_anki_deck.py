@@ -342,7 +342,7 @@ HSK2_VOCAB = [
     ("hsk2_tiaowu",        "跳舞", "tiàowǔ",          "dance",
      "她非常喜欢跳舞。",             "Tā fēicháng xǐhuān tiàowǔ.",              "She loves dancing very much."),
     ("hsk2_dadianhua",     "打电话", "dǎ diànhuà",    "make a phone call",
-     "我给你打电话。",               "Wǒ gěi nǐ dǎ diànhuà.",                   "I'll give you a phone call."),
+     "我给妈妈打电话。",             "Wǒ gěi māma dǎ diànhuà.",                 "I call my mum."),
     ("hsk2_haochi",        "好吃", "hǎochī",          "delicious",
      "这道菜非常好吃！",             "Zhè dào cài fēicháng hǎochī!",             "This dish is extremely delicious!"),
     ("hsk2_pingguo",       "苹果", "píngguǒ",         "apple",
@@ -350,7 +350,7 @@ HSK2_VOCAB = [
     ("hsk2_xigua",         "西瓜", "xīguā",           "watermelon",
      "夏天吃西瓜很解渴。",           "Xiàtiān chī xīguā hěn jiěkě.",             "Eating watermelon in summer is very refreshing."),
     ("hsk2_zuotian",       "昨天", "zuótiān",         "yesterday",
-     "昨天我学了很多新词。",         "Zuótiān wǒ xué le hěn duō xīn cí.",       "Yesterday I learned many new words."),
+     "昨天我见了一个老朋友。",       "Zuótiān wǒ jiàn le yī gè lǎo péngyou.",   "Yesterday I met an old friend."),
 ]
 
 # ---------------------------------------------------------------------------
