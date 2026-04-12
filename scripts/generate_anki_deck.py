@@ -374,9 +374,9 @@ CSS = """
 .chinese { font-size: 48px; color: #fff; margin-bottom: 8px; }
 .pinyin  { font-size: 22px; color: #555; margin-bottom: 4px; }
 .english { font-size: 20px; color: #333; }
-.sentence-zh { font-size: 28px; color: #333; margin: 12px 0 4px; }
-.sentence-py { font-size: 16px; color: #666; }
-.sentence-en { font-size: 16px; color: #888; }
+.sentence-zh { font-size: 28px; color: #fff; margin: 12px 0 4px; }
+.sentence-py { font-size: 16px; color: #fff; }
+.sentence-en { font-size: 16px; color: #fff; }
 hr { border: none; border-top: 1px solid #ddd; margin: 16px 0; }
 """
 
@@ -441,7 +441,7 @@ HSK2_MODEL = genanki.Model(
 <div style="color:#aaa; font-size:14px">What is the sentence and word?</div>
 {{/Audio}}
 {{^Audio}}
-[no audio for this card]
+[not available for this card]
 {{/Audio}}
 """,
             "afmt": """\
