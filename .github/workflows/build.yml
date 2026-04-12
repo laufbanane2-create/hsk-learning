@@ -68,12 +68,43 @@ jobs:
         run: pip install genanki
 
       - name: Build Anki deck
-        run: python3 scripts/generate_anki_deck.py --output hsk2.apkg
+        run: python3 scripts/generate_anki_deck.py --level hsk2 --output hsk2.apkg
 
       - name: Upload Anki deck artifact
         uses: actions/upload-artifact@v7
         with:
           name: hsk2-anki-deck
           path: hsk2.apkg
+          retention-days: 30
+
+  build-anki-deck-hsk1:
+    name: Build Anki Deck HSK1 (.apkg)
+    runs-on: ubuntu-latest
+    needs: generate-audio
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.ref_name }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Install genanki
+        run: pip install genanki
+
+      - name: Build Anki deck
+        run: python3 scripts/generate_anki_deck.py --level hsk1 --output hsk1.apkg
+
+      - name: Upload Anki deck artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: hsk1-anki-deck
+          path: hsk1.apkg
           retention-days: 30
 
