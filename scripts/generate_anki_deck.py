@@ -833,21 +833,45 @@ HSK2_VOCAB = [
      "请开门。",                     "Qǐng kāi mén.",                             "Please open the door."),
     ("hsk2_ling",           "零",     "líng",           "zero",
      "现在是零点。",                 "Xiànzài shì líng diǎn.",                    "It is midnight."),
+    ("hsk2_suiran_danshi",  "虽然……但是……", "suīrán … dànshì …", "although ... but ...",
+     "虽然下雨，但是我们还是去。",    "Suīrán xiàyǔ, dànshì wǒmen háishi qù.",    "Although it is raining, we are still going."),
+    ("hsk2_yinwei_suoyi",   "因为……所以……", "yīnwèi … suǒyǐ …", "because ... so ...",
+     "因为下雨，所以我没有去。",      "Yīnwèi xiàyǔ, suǒyǐ wǒ méiyǒu qù.",        "Because it rained, I did not go."),
 ]
 
 EXPECTED_WORDS_PER_LEVEL = 150
 
-# Keep HSK 1 to its official 150 words and make HSK 2 an additional, distinct
-# set of 150 words rather than a cumulative deck.
-HSK1_VOCAB = HSK1_VOCAB[:EXPECTED_WORDS_PER_LEVEL]
-_hsk1_words = {entry[1] for entry in HSK1_VOCAB}
-_hsk2_words = set()
-HSK2_VOCAB = [
-    entry for entry in HSK2_VOCAB
-    if entry[1] not in _hsk1_words and not (entry[1] in _hsk2_words or _hsk2_words.add(entry[1]))
-][:EXPECTED_WORDS_PER_LEVEL]
+# HSK 2 vocabulary as listed on the official HSK website.
+OFFICIAL_HSK2_WORDS = (
+    "吧", "白", "百", "帮助", "报纸", "比", "别", "宾馆",
+    "长", "唱歌", "出", "穿", "次", "从", "错",
+    "打篮球", "大家", "到", "得", "等", "弟弟", "第一", "懂", "对",
+    "房间", "非常", "服务员",
+    "高", "告诉", "哥哥", "给", "公共汽车", "公司", "贵", "过",
+    "还", "孩子", "好吃", "黑", "红", "火车站",
+    "机场", "鸡蛋", "件", "教室", "姐姐", "介绍", "近", "进", "就", "觉得",
+    "咖啡", "开始", "考试", "可能", "可以", "课", "快", "快乐",
+    "累", "离", "两", "零", "路", "旅游",
+    "卖", "慢", "忙", "每", "妹妹", "门", "面条",
+    "男", "您", "牛奶", "女",
+    "旁边", "跑步", "便宜", "票",
+    "妻子", "起床", "千", "铅笔", "晴", "去年",
+    "让", "日",
+    "上班", "身体", "生病", "生日", "时间", "事情", "手表", "手机", "说话", "送", "虽然……但是……",
+    "它", "踢足球", "题", "跳舞",
+    "外", "完", "玩", "晚上", "往", "为什么", "问", "问题",
+    "西瓜", "希望", "洗", "小时", "笑", "新", "姓", "休息", "雪",
+    "颜色", "眼睛", "羊肉", "要", "药", "也", "一下", "已经", "一起", "意思", "阴", "因为……所以……", "游泳", "右边", "鱼", "远", "运动",
+    "再", "早上", "丈夫", "找", "着", "真", "正在", "只", "知道", "准备", "走", "最", "左边",
+)
 
-if len(HSK1_VOCAB) != EXPECTED_WORDS_PER_LEVEL or len(HSK2_VOCAB) != EXPECTED_WORDS_PER_LEVEL:
+HSK1_VOCAB = HSK1_VOCAB[:EXPECTED_WORDS_PER_LEVEL]
+_hsk2_by_word = {entry[1]: entry for entry in HSK2_VOCAB}
+HSK2_VOCAB = [_hsk2_by_word[word] for word in OFFICIAL_HSK2_WORDS]
+
+if (len(HSK1_VOCAB) != EXPECTED_WORDS_PER_LEVEL
+        or len(HSK2_VOCAB) != EXPECTED_WORDS_PER_LEVEL
+        or len(set(OFFICIAL_HSK2_WORDS)) != EXPECTED_WORDS_PER_LEVEL):
     raise RuntimeError("Each HSK deck must contain exactly 150 vocabulary entries.")
 
 # ---------------------------------------------------------------------------
