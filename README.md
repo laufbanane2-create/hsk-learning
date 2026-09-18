@@ -10,7 +10,7 @@ HSK (汉语水平考试, *Hànyǔ Shuǐpíng Kǎoshì*) is the official Chinese 
 |-------|-------|-------------|
 | HSK 1 | 150 official words | Basic everyday vocabulary |
 | HSK 2 | +150 official words | Elementary vocabulary (builds on HSK 1) |
-| HSK 3 | 13 words | Intermediate vocabulary |
+| HSK 3 | 300 words | Intermediate vocabulary |
 
 ## Scripts
 
@@ -35,7 +35,7 @@ Options:
 
 ### Generate Anki Deck
 
-An Anki deck (`.apkg`) for either HSK level can be generated and imported directly into [Anki](https://apps.ankiweb.net/).
+An Anki deck (`.apkg`) for any supported HSK level can be generated and imported directly into [Anki](https://apps.ankiweb.net/).
 
 ```bash
 pip install genanki
@@ -45,7 +45,7 @@ python scripts/generate_anki_deck.py --level hsk1 -o ~/Desktop/hsk1.apkg
 python scripts/generate_anki_deck.py --level hsk3 -o ~/Desktop/hsk3.apkg
 ```
 
-Each deck contains **150 vocabulary entries × 3 card types = 450 cards**. HSK 1 contains its 150 words, and HSK 2 follows the official 150-word HSK 2 list.
+HSK 1 and HSK 2 each contain **150 vocabulary entries × 3 card types = 450 cards**. HSK 3 now includes the complete HSK 3 list with 300 vocabulary entries.
 
 | Card type | Front | Back |
 |-----------|-------|------|
@@ -70,7 +70,7 @@ scripts/
 |-------|-------|--------|
 | HSK 1 | 150 | ✅ 150-word HSK 1 deck |
 | HSK 2 | 150 | ✅ Official 150-word HSK 2 list |
-| HSK 3 | 13 | ✅ Added vocabulary batch |
+| HSK 3 | 300 | ✅ Complete HSK 3 list |
 
 Every entry includes:
 - Simplified Chinese character(s)
