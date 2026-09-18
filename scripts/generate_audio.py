@@ -667,7 +667,8 @@ def supplement_audio_vocab_from_deck() -> None:
     for node in module.body:
         if (isinstance(node, ast.Assign) and len(node.targets) == 1
                 and isinstance(node.targets[0], ast.Name)
-                and node.targets[0].id in {"HSK1_VOCAB", "HSK2_VOCAB"}):
+                and node.targets[0].id in {"HSK1_VOCAB", "HSK2_VOCAB"}
+                and isinstance(node.value, (ast.List, ast.Tuple))):
             deck_vocab.extend(ast.literal_eval(node.value))
 
     sentence_ids = {vocab_id for vocab_id, _ in VOCAB}
