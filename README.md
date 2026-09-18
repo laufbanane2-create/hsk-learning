@@ -8,8 +8,8 @@ HSK (汉语水平考试, *Hànyǔ Shuǐpíng Kǎoshì*) is the official Chinese 
 
 | Level | Words | Description |
 |-------|-------|-------------|
-| HSK 1 | 150   | Basic everyday vocabulary |
-| HSK 2 | +150  | Elementary vocabulary (builds on HSK 1) |
+| HSK 1 | 150 official words | Basic everyday vocabulary |
+| HSK 2 | +150 official words | Elementary vocabulary (builds on HSK 1) |
 
 ## Scripts
 
@@ -42,7 +42,7 @@ python scripts/generate_anki_deck.py          # writes scripts/hsk2.apkg
 python scripts/generate_anki_deck.py -o ~/Desktop/hsk2.apkg  # custom path
 ```
 
-The deck contains **155 vocabulary entries × 3 card types = 465 cards**:
+The HSK 2 deck contains **229 vocabulary entries × 3 card types = 687 cards**:
 
 | Card type | Front | Back |
 |-----------|-------|------|
@@ -65,8 +65,8 @@ scripts/
 
 | Level | Words | Status |
 |-------|-------|--------|
-| HSK 1 | 150   | ✅ Complete |
-| HSK 2 | 150   | ✅ Complete |
+| HSK 1 | 163   | ✅ Contains all 150 official legacy HSK 1 words |
+| HSK 2 | 229   | ✅ Contains all 150 official legacy HSK 2 words |
 
 Every entry includes:
 - Simplified Chinese character(s)
