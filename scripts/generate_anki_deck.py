@@ -835,6 +835,21 @@ HSK2_VOCAB = [
      "现在是零点。",                 "Xiànzài shì líng diǎn.",                    "It is midnight."),
 ]
 
+EXPECTED_WORDS_PER_LEVEL = 150
+
+# Keep HSK 1 to its official 150 words and make HSK 2 an additional, distinct
+# set of 150 words rather than a cumulative deck.
+HSK1_VOCAB = HSK1_VOCAB[:EXPECTED_WORDS_PER_LEVEL]
+_hsk1_words = {entry[1] for entry in HSK1_VOCAB}
+_hsk2_words = set()
+HSK2_VOCAB = [
+    entry for entry in HSK2_VOCAB
+    if entry[1] not in _hsk1_words and not (entry[1] in _hsk2_words or _hsk2_words.add(entry[1]))
+][:EXPECTED_WORDS_PER_LEVEL]
+
+if len(HSK1_VOCAB) != EXPECTED_WORDS_PER_LEVEL or len(HSK2_VOCAB) != EXPECTED_WORDS_PER_LEVEL:
+    raise RuntimeError("Each HSK deck must contain exactly 150 vocabulary entries.")
+
 # ---------------------------------------------------------------------------
 # Stable IDs (generated once — must not change between runs)
 # ---------------------------------------------------------------------------

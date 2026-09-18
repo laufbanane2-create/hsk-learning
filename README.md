@@ -34,15 +34,16 @@ Options:
 
 ### Generate Anki Deck
 
-An Anki deck (`.apkg`) with all HSK 2 vocabulary can be generated and imported directly into [Anki](https://apps.ankiweb.net/).
+An Anki deck (`.apkg`) for either HSK level can be generated and imported directly into [Anki](https://apps.ankiweb.net/).
 
 ```bash
 pip install genanki
 python scripts/generate_anki_deck.py          # writes scripts/hsk2.apkg
 python scripts/generate_anki_deck.py -o ~/Desktop/hsk2.apkg  # custom path
+python scripts/generate_anki_deck.py --level hsk1 -o ~/Desktop/hsk1.apkg
 ```
 
-The HSK 2 deck contains **229 vocabulary entries × 3 card types = 687 cards**:
+Each deck contains **150 vocabulary entries × 3 card types = 450 cards**. HSK 1 contains its 150 words; HSK 2 contains 150 additional words and does not repeat HSK 1 vocabulary.
 
 | Card type | Front | Back |
 |-----------|-------|------|
@@ -65,8 +66,8 @@ scripts/
 
 | Level | Words | Status |
 |-------|-------|--------|
-| HSK 1 | 163   | ✅ Contains all 150 official legacy HSK 1 words |
-| HSK 2 | 229   | ✅ Contains all 150 official legacy HSK 2 words |
+| HSK 1 | 150 | ✅ 150-word HSK 1 deck |
+| HSK 2 | 150 | ✅ 150 additional words, separate from HSK 1 |
 
 Every entry includes:
 - Simplified Chinese character(s)
