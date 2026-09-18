@@ -16,6 +16,7 @@ The script is idempotent: files that already exist are skipped unless
 """
 
 import argparse
+import ast
 import json
 import os
 import sys
@@ -656,6 +657,29 @@ VOCAB_WORDS = [
     ("hsk2_xigua",         "西瓜"),
     ("hsk2_zuotian",       "昨天"),
 ]
+
+
+def supplement_audio_vocab_from_deck() -> None:
+    """Add any deck entries not already represented in the audio vocabulary."""
+    deck_path = os.path.join(os.path.dirname(__file__), "generate_anki_deck.py")
+    module = ast.parse(open(deck_path, encoding="utf-8").read(), filename=deck_path)
+    deck_vocab = []
+    for node in module.body:
+        if (isinstance(node, ast.Assign) and len(node.targets) == 1
+                and isinstance(node.targets[0], ast.Name)
+                and node.targets[0].id in {"HSK1_VOCAB", "HSK2_VOCAB"}):
+            deck_vocab.extend(ast.literal_eval(node.value))
+
+    sentence_ids = {vocab_id for vocab_id, _ in VOCAB}
+    word_ids = {vocab_id for vocab_id, _ in VOCAB_WORDS}
+    for vocab_id, chinese, _, _, sentence, _, _ in deck_vocab:
+        if vocab_id not in sentence_ids:
+            VOCAB.append((vocab_id, sentence))
+        if vocab_id not in word_ids:
+            VOCAB_WORDS.append((vocab_id, chinese))
+
+
+supplement_audio_vocab_from_deck()
 
 VOICE_ID = "EXAVITQu4vr4xnSDxMaL"  # Bella
 MODEL_ID = "eleven_v3"
