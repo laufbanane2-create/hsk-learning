@@ -18,7 +18,6 @@ HSK (汉语水平考试, *Hànyǔ Shuǐpíng Kǎoshì*) is the official Chinese 
 Word and example-sentence audio are generated with the ElevenLabs API. You need an API key.
 
 ```bash
-pip install requests
 python scripts/generate_audio.py --api-key YOUR_ELEVENLABS_KEY
 ```
 
