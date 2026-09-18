@@ -371,7 +371,7 @@ HSK1_VOCAB = [
 ]
 
 # ---------------------------------------------------------------------------
-# HSK 2 vocabulary — mirrors VocabData.kt
+# HSK 2 vocabulary
 # Fields: (id, chinese, pinyin, english, sentence, sentence_pinyin, sentence_english)
 # ---------------------------------------------------------------------------
 HSK2_VOCAB = [
