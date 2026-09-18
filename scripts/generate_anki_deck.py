@@ -13,7 +13,7 @@ that contains the spoken example sentence).
 Usage:
     python3 scripts/generate_anki_deck.py [--level LEVEL] [--output OUTPUT]
 
-    --level   hsk1 or hsk2 (default: hsk2)
+    --level   hsk1, hsk2, or hsk3 (default: hsk2)
     --output  Path for the .apkg file (default: hsk<level>.apkg next to this script)
 
 Requirements:
@@ -839,6 +839,35 @@ HSK2_VOCAB = [
      "因为下雨，所以我没有去。",      "Yīnwèi xiàyǔ, suǒyǐ wǒ méiyǒu qù.",        "Because it rained, I did not go."),
 ]
 
+HSK3_VOCAB = [
+    ("hsk3_zhongyu",       "终于",   "zhōng yú",       "at last",
+     "我终于完成了作业。",               "Wǒ zhōngyú wánchéng le zuòyè.",             "I finally finished my homework."),
+    ("hsk3_zhong",         "种",     "zhǒng",          "kind",
+     "这里有很多种水果。",               "Zhèlǐ yǒu hěn duō zhǒng shuǐguǒ.",           "There are many kinds of fruit here."),
+    ("hsk3_zhongyao",      "重要",   "zhòng yào",      "important",
+     "健康对每个人都很重要。",           "Jiànkāng duì měi gè rén dōu hěn zhòngyào.", "Health is important to everyone."),
+    ("hsk3_zhoumo",        "周末",   "zhōu mò",        "weekend",
+     "这个周末我们一起去公园。",         "Zhège zhōumò wǒmen yīqǐ qù gōngyuán.",      "We are going to the park together this weekend."),
+    ("hsk3_zhuyao",        "主要",   "zhǔ yào",        "mainly",
+     "这个问题主要是时间不够。",         "Zhège wèntí zhǔyào shì shíjiān bù gòu.",    "This problem is mainly due to insufficient time."),
+    ("hsk3_zhuyi",         "注意",   "zhù yì",         "take note of",
+     "请注意听老师说话。",               "Qǐng zhùyì tīng lǎoshī shuōhuà.",           "Please pay attention to the teacher."),
+    ("hsk3_ziji",          "自己",   "zì jǐ",          "self; oneself",
+     "这件事要自己做。",                 "Zhè jiàn shì yào zìjǐ zuò.",                 "You need to do this yourself."),
+    ("hsk3_zixingche",     "自行车", "zì xíng chē",    "bicycle",
+     "我每天骑自行车去学校。",           "Wǒ měitiān qí zìxíngchē qù xuéxiào.",       "I ride a bicycle to school every day."),
+    ("hsk3_zongshi",       "总是",   "zǒng shì",       "always",
+     "他总是很早起床。",                 "Tā zǒngshì hěn zǎo qǐchuáng.",              "He always gets up early."),
+    ("hsk3_zui",           "嘴",     "zuǐ",            "mouth",
+     "请张开嘴。",                       "Qǐng zhāng kāi zuǐ.",                        "Please open your mouth."),
+    ("hsk3_zuihou",        "最后",   "zuì hòu",        "lastly",
+     "最后，请回答这个问题。",           "Zuìhòu, qǐng huídá zhège wèntí.",           "Lastly, please answer this question."),
+    ("hsk3_zuijin",        "最近",   "zuì jìn",        "recently",
+     "你最近怎么样？",                   "Nǐ zuìjìn zěnmeyàng?",                       "How have you been recently?"),
+    ("hsk3_zuoye",         "作业",   "zuò yè",         "homework",
+     "今天的作业很多。",                 "Jīntiān de zuòyè hěn duō.",                 "There is a lot of homework today."),
+]
+
 EXPECTED_WORDS_PER_LEVEL = 150
 
 # HSK 1 vocabulary as listed on the official HSK website.
@@ -909,6 +938,8 @@ HSK1_MODEL_ID = 1932067738
 HSK1_DECK_ID  = 1932067739
 MODEL_ID  = 1932067740
 DECK_ID   = 1932067741
+HSK3_MODEL_ID = 1932067742
+HSK3_DECK_ID  = 1932067743
 
 # ---------------------------------------------------------------------------
 # Note model with 3 card templates
@@ -1025,6 +1056,14 @@ HSK1_MODEL = genanki.Model(
     css=CSS,
 )
 
+HSK3_MODEL = genanki.Model(
+    HSK3_MODEL_ID,
+    "HSK 3 Vocabulary",
+    fields=_VOCAB_FIELDS,
+    templates=_CARD_TEMPLATES,
+    css=CSS,
+)
+
 
 def make_note(model, vocab_id, chinese, pinyin, english, sentence, sent_py, sent_en,
               audio_tag, word_audio_tag):
@@ -1107,6 +1146,7 @@ def build_deck(vocab_list, model, deck_id, deck_name, output_path: str) -> None:
 _LEVELS = {
     "hsk1": (HSK1_VOCAB, HSK1_MODEL, HSK1_DECK_ID, "HSK 1 Vocabulary"),
     "hsk2": (HSK2_VOCAB, HSK2_MODEL, DECK_ID,       "HSK 2 Vocabulary"),
+    "hsk3": (HSK3_VOCAB, HSK3_MODEL, HSK3_DECK_ID, "HSK 3 Vocabulary"),
 }
 
 

@@ -73,6 +73,9 @@ jobs:
       - name: Build HSK 2 Anki deck
         run: python3 scripts/generate_anki_deck.py --level hsk2 --output hsk2.apkg
 
+      - name: Build HSK 3 Anki deck
+        run: python3 scripts/generate_anki_deck.py --level hsk3 --output hsk3.apkg
+
       - name: Upload HSK 1 Anki deck artifact
         uses: actions/upload-artifact@v7
         with:
@@ -87,3 +90,9 @@ jobs:
           path: hsk2.apkg
           retention-days: 30
 
+      - name: Upload HSK 3 Anki deck artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: hsk3-anki-deck
+          path: hsk3.apkg
+          retention-days: 30

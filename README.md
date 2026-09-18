@@ -10,6 +10,7 @@ HSK (汉语水平考试, *Hànyǔ Shuǐpíng Kǎoshì*) is the official Chinese 
 |-------|-------|-------------|
 | HSK 1 | 150 official words | Basic everyday vocabulary |
 | HSK 2 | +150 official words | Elementary vocabulary (builds on HSK 1) |
+| HSK 3 | 13 words | Intermediate vocabulary |
 
 ## Scripts
 
@@ -41,6 +42,7 @@ pip install genanki
 python scripts/generate_anki_deck.py          # writes scripts/hsk2.apkg
 python scripts/generate_anki_deck.py -o ~/Desktop/hsk2.apkg  # custom path
 python scripts/generate_anki_deck.py --level hsk1 -o ~/Desktop/hsk1.apkg
+python scripts/generate_anki_deck.py --level hsk3 -o ~/Desktop/hsk3.apkg
 ```
 
 Each deck contains **150 vocabulary entries × 3 card types = 450 cards**. HSK 1 contains its 150 words, and HSK 2 follows the official 150-word HSK 2 list.
@@ -68,6 +70,7 @@ scripts/
 |-------|-------|--------|
 | HSK 1 | 150 | ✅ 150-word HSK 1 deck |
 | HSK 2 | 150 | ✅ Official 150-word HSK 2 list |
+| HSK 3 | 13 | ✅ Added vocabulary batch |
 
 Every entry includes:
 - Simplified Chinese character(s)
@@ -82,7 +85,7 @@ Every entry includes:
 Pull requests are welcome. When adding vocabulary:
 
 1. Add the entry to the `VOCAB` list in `scripts/generate_audio.py`.
-2. Add the full entry (id, chinese, pinyin, english, sentence, sentence_pinyin, sentence_english) to `HSK2_VOCAB` in `scripts/generate_anki_deck.py`.
+2. Add the full entry (id, chinese, pinyin, english, sentence, sentence_pinyin, sentence_english) to the applicable `HSK*_VOCAB` list in `scripts/generate_anki_deck.py`.
 3. Keep IDs unique and prefixed with the level, e.g. `hsk1_apple`, `hsk2_compare`.
 
 ## License
