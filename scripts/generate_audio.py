@@ -2,7 +2,7 @@
 """
 Build-time audio generation script for HSK Learning.
 
-Generates MP3 files for every vocabulary sentence using the ElevenLabs API
+Generates MP3 files for every vocabulary word and example sentence using the ElevenLabs API
 (model: eleven_v3, voice: Bella) and writes them to
 audio/ at the repository root.
 
@@ -25,8 +25,8 @@ import urllib.error
 import urllib.request
 
 # ---------------------------------------------------------------------------
-# Vocabulary data — mirrors VocabData.kt so the script has no build dependency
-# on the Android project.  Keep in sync with VocabData.kt.
+# Sentence-audio vocabulary. Missing entries are supplemented from the deck
+# vocabulary lists in generate_anki_deck.py.
 # ---------------------------------------------------------------------------
 VOCAB = [
     # HSK 1

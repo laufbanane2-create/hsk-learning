@@ -5,10 +5,10 @@ Generate an Anki deck (.apkg) for HSK vocabulary.
 The deck contains three card types per vocabulary entry:
   1. Word card   – front: Chinese character(s); back: pinyin + English + word audio + sentence + sentence audio
   2. Sentence card – front: example sentence (no audio); back: translation + word + word audio + sentence audio
-  3. Audio card  – front: sentence audio only; back: sentence + Chinese + pinyin + English + word audio
+  3. Audio card  – front: sentence audio and prompt; back: sentence + Chinese + pinyin + English + word audio
 
-Audio files are taken from audio/ at the repository root (one MP3 per vocab entry
-that contains the spoken example sentence).
+Audio files are taken from audio/ at the repository root (word and example-sentence
+MP3 files for each vocabulary entry).
 
 Usage:
     python3 scripts/generate_anki_deck.py [--level LEVEL] [--output OUTPUT]

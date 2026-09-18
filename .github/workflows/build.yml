@@ -15,7 +15,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
         with:
-          # Need full history + write access to commit generated files back.
+          # Use the workflow token to commit generated files back.
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Python
@@ -86,4 +86,3 @@ jobs:
           name: hsk2-anki-deck
           path: hsk2.apkg
           retention-days: 30
-
