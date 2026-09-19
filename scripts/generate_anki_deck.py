@@ -944,12 +944,20 @@ _VOCAB_FIELDS = [
     {"name": "WrittenSentence"},
     {"name": "WrittenSentencePinyin"},
     {"name": "WrittenSentenceEnglish"},
+    {"name": "Retired"},
 ]
 
 _CARD_TEMPLATES = [
-    # One card per word keeps all prompts on the same review schedule.
+    # Keep the former Word template's position retired. The active template
+    # remains at position 1, preserving each written-sentence card's schedule.
     {
-        "name": "Vocabulary",
+        "name": "Word",
+        "qfmt": "{{#Retired}}{{Retired}}{{/Retired}}",
+        "afmt": "{{FrontSide}}",
+    },
+    # One card per word keeps all prompts on the written-sentence schedule.
+    {
+        "name": "Sentence",
         "qfmt": """\
 <div class="chinese">{{Chinese}}</div>
 <div class="sentence-zh">{{WrittenSentence}}</div>
@@ -1015,6 +1023,7 @@ def make_note(model, vocab_id, chinese, pinyin, english, sentence, sent_py, sent
             written_sentence,
             written_sent_py,
             written_sent_en,
+            "",
         ],
         # Stable GUID derived from the vocab id so re-runs update existing notes
         guid=genanki.guid_for(vocab_id),
