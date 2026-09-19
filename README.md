@@ -47,6 +47,10 @@ learning schedule per word, so related prompts do not create separately due
 cards on following days. HSK 1 contains its 150 words, and HSK 2 follows the
 official 150-word HSK 2 list.
 
+The generated decks are named **HSK 1 Connected Review** and **HSK 2 Connected
+Review**. They use separate Anki import identifiers, so importing them does not
+modify the legacy vocabulary decks.
+
 | Card | Front | Back |
 |------|-------|------|
 | **Vocabulary** | Chinese word, a different written HSK sentence to translate, and the word's spoken example sentence | Pinyin and English for the word, plus pinyin and English for both sentences |

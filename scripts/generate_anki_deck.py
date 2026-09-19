@@ -903,12 +903,13 @@ if (len(HSK1_VOCAB) != EXPECTED_WORDS_PER_LEVEL
     raise RuntimeError("Each HSK deck must contain exactly 150 vocabulary entries.")
 
 # ---------------------------------------------------------------------------
-# Stable IDs (generated once — must not change between runs)
+# Stable IDs for the connected-review decks. These are deliberately distinct
+# from the legacy deck and note-type IDs so importing cannot modify old decks.
 # ---------------------------------------------------------------------------
-HSK1_MODEL_ID = 1932067738
-HSK1_DECK_ID  = 1932067739
-MODEL_ID  = 1932067740
-DECK_ID   = 1932067741
+HSK1_MODEL_ID = 1932067742
+HSK1_DECK_ID  = 1932067743
+MODEL_ID  = 1932067744
+DECK_ID   = 1932067745
 
 # ---------------------------------------------------------------------------
 # Note model with 3 card templates
@@ -984,7 +985,7 @@ _CARD_TEMPLATES = [
 
 HSK2_MODEL = genanki.Model(
     MODEL_ID,
-    "HSK 2 Vocabulary",
+    "HSK 2 Connected Review",
     fields=_VOCAB_FIELDS,
     templates=_CARD_TEMPLATES,
     css=CSS,
@@ -993,7 +994,7 @@ HSK2_MODEL = genanki.Model(
 
 HSK1_MODEL = genanki.Model(
     HSK1_MODEL_ID,
-    "HSK 1 Vocabulary",
+    "HSK 1 Connected Review",
     fields=_VOCAB_FIELDS,
     templates=_CARD_TEMPLATES,
     css=CSS,
@@ -1025,8 +1026,8 @@ def make_note(model, vocab_id, chinese, pinyin, english, sentence, sent_py, sent
             written_sent_en,
             "",
         ],
-        # Stable GUID derived from the vocab id so re-runs update existing notes
-        guid=genanki.guid_for(vocab_id),
+        # A distinct, stable GUID keeps these notes separate from legacy decks.
+        guid=genanki.guid_for(f"connected-review::{vocab_id}"),
     )
 
 
@@ -1087,8 +1088,8 @@ def build_deck(vocab_list, model, deck_id, deck_name, output_path: str) -> None:
 
 
 _LEVELS = {
-    "hsk1": (HSK1_VOCAB, HSK1_MODEL, HSK1_DECK_ID, "HSK 1 Vocabulary"),
-    "hsk2": (HSK2_VOCAB, HSK2_MODEL, DECK_ID,       "HSK 2 Vocabulary"),
+    "hsk1": (HSK1_VOCAB, HSK1_MODEL, HSK1_DECK_ID, "HSK 1 Connected Review"),
+    "hsk2": (HSK2_VOCAB, HSK2_MODEL, DECK_ID,       "HSK 2 Connected Review"),
 }
 
 
