@@ -913,12 +913,17 @@ if (len(HSK1_VOCAB) != EXPECTED_WORDS_PER_LEVEL
     raise RuntimeError("Each HSK deck must contain exactly 150 vocabulary entries.")
 
 # ---------------------------------------------------------------------------
-# Stable IDs (generated once — must not change between runs)
+# Stable IDs for the learning-progress decks (generated once — must not change between runs)
 # ---------------------------------------------------------------------------
-HSK1_MODEL_ID = 1932067738
-HSK1_DECK_ID  = 1932067739
-MODEL_ID  = 1932067740
-DECK_ID   = 1932067741
+HSK1_MODEL_ID = 1932067750
+HSK1_DECK_ID = 1932067751
+HSK2_MODEL_ID = 1932067752
+HSK2_DECK_ID = 1932067753
+
+HSK1_DECK_NAME = "HSK 1 Vocabulary - Learning Progress"
+HSK2_DECK_NAME = "HSK 2 Vocabulary - Learning Progress"
+HSK1_SOURCE_DECK_NAME = "HSK 1 Vocabulary"
+HSK2_SOURCE_DECK_NAME = "HSK 2 Vocabulary"
 
 # ---------------------------------------------------------------------------
 # Note model with 3 card templates
@@ -1019,8 +1024,8 @@ _CARD_TEMPLATES = [
 ]
 
 HSK2_MODEL = genanki.Model(
-    MODEL_ID,
-    "HSK 2 Vocabulary",
+    HSK2_MODEL_ID,
+    HSK2_DECK_NAME,
     fields=_VOCAB_FIELDS,
     templates=_CARD_TEMPLATES,
     css=CSS,
@@ -1029,7 +1034,7 @@ HSK2_MODEL = genanki.Model(
 
 HSK1_MODEL = genanki.Model(
     HSK1_MODEL_ID,
-    "HSK 1 Vocabulary",
+    HSK1_DECK_NAME,
     fields=_VOCAB_FIELDS,
     templates=_CARD_TEMPLATES,
     css=CSS,
@@ -1056,12 +1061,12 @@ def make_note(model, vocab_id, chinese, pinyin, english, sentence, sent_py, sent
             audio_tag,
             word_audio_tag,
         ],
-        # Stable GUID derived from the vocab id so re-runs update existing notes
-        guid=genanki.guid_for(vocab_id),
+        # Stable GUID scoped to the learning-progress decks.
+        guid=genanki.guid_for("learning-progress", vocab_id),
     )
 
 
-def _restore_learning_state(output_path: str, deck_name: str, vocab_list) -> None:
+def _restore_learning_state(output_path: str, source_deck_name: str, vocab_list) -> None:
     """Copy the supplied export's scheduling state onto matching generated cards."""
     if not os.path.isfile(LEARNING_STATE_EXPORT):
         raise RuntimeError(f"Learning-state export not found: {LEARNING_STATE_EXPORT}")
@@ -1084,10 +1089,12 @@ def _restore_learning_state(output_path: str, deck_name: str, vocab_list) -> Non
         try:
             source_deck_ids = {
                 deck_id for deck_id, name in source.execute("SELECT id, name FROM decks")
-                if name == deck_name
+                if name == source_deck_name
             }
             if len(source_deck_ids) != 1:
-                raise RuntimeError(f"Expected exactly one {deck_name!r} deck in the export.")
+                raise RuntimeError(
+                    f"Expected exactly one {source_deck_name!r} deck in the export."
+                )
             source_deck_id = source_deck_ids.pop()
 
             source_cards = {}
@@ -1161,7 +1168,7 @@ def _restore_learning_state(output_path: str, deck_name: str, vocab_list) -> Non
         shutil.move(rebuilt_path, output_path)
 
 
-def build_deck(vocab_list, model, deck_id, deck_name, output_path: str) -> None:
+def build_deck(vocab_list, model, deck_id, deck_name, source_deck_name, output_path: str) -> None:
     deck = genanki.Deck(deck_id, deck_name)
     media_files = []
 
@@ -1197,7 +1204,7 @@ def build_deck(vocab_list, model, deck_id, deck_name, output_path: str) -> None:
     package = genanki.Package(deck)
     package.media_files = media_files
     package.write_to_file(output_path)
-    _restore_learning_state(output_path, deck_name, vocab_list)
+    _restore_learning_state(output_path, source_deck_name, vocab_list)
 
     total = len(vocab_list)
     with_audio = total - len(missing_audio)
@@ -1216,8 +1223,8 @@ def build_deck(vocab_list, model, deck_id, deck_name, output_path: str) -> None:
 
 
 _LEVELS = {
-    "hsk1": (HSK1_VOCAB, HSK1_MODEL, HSK1_DECK_ID, "HSK 1 Vocabulary"),
-    "hsk2": (HSK2_VOCAB, HSK2_MODEL, DECK_ID,       "HSK 2 Vocabulary"),
+    "hsk1": (HSK1_VOCAB, HSK1_MODEL, HSK1_DECK_ID, HSK1_DECK_NAME, HSK1_SOURCE_DECK_NAME),
+    "hsk2": (HSK2_VOCAB, HSK2_MODEL, HSK2_DECK_ID, HSK2_DECK_NAME, HSK2_SOURCE_DECK_NAME),
 }
 
 
@@ -1230,9 +1237,9 @@ def main() -> None:
                         help="Output .apkg path (default: hsk<level>.apkg next to this script)")
     args = parser.parse_args()
 
-    vocab_list, model, deck_id, deck_name = _LEVELS[args.level]
+    vocab_list, model, deck_id, deck_name, source_deck_name = _LEVELS[args.level]
     output = args.output or os.path.join(SCRIPT_DIR, f"{args.level}.apkg")
-    build_deck(vocab_list, model, deck_id, deck_name, output)
+    build_deck(vocab_list, model, deck_id, deck_name, source_deck_name, output)
 
 
 if __name__ == "__main__":

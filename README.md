@@ -43,7 +43,7 @@ python scripts/generate_anki_deck.py --level hsk1 -o ~/Desktop/hsk1.apkg
 ```
 
 Each deck contains **150 vocabulary entries × 3 card types = 450 cards**. HSK 1 contains its 150 words, and HSK 2 follows the official 150-word HSK 2 list.
-The supplied Anki export is used to preserve the available learning state when the decks are generated. The two new HSK 2 pattern notes that are not present in that export begin as new cards.
+The generated decks are named **HSK 1 Vocabulary - Learning Progress** and **HSK 2 Vocabulary - Learning Progress**, with identities distinct from the source decks, so importing them creates new decks. The supplied Anki export is used to preserve the available learning state. The two new HSK 2 pattern notes that are not present in that export begin as new cards.
 
 | Card type | Front | Back |
 |-----------|-------|------|
