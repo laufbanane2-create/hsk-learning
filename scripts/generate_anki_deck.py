@@ -23,12 +23,21 @@ Requirements:
 import argparse
 import os
 import random
+import shutil
+import sqlite3
 import sys
+import tempfile
+import zipfile
 
 try:
     import genanki
 except ImportError:
     sys.exit("genanki is required: pip install genanki")
+
+try:
+    import zstandard
+except ImportError:
+    sys.exit("zstandard is required: pip install zstandard")
 
 # ---------------------------------------------------------------------------
 # Paths
@@ -36,6 +45,7 @@ except ImportError:
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 REPO_ROOT = os.path.dirname(SCRIPT_DIR)
 AUDIO_DIR = os.path.join(REPO_ROOT, "audio")
+LEARNING_STATE_EXPORT = os.path.join(REPO_ROOT, "All decks-20260919074725.apkg")
 
 # ---------------------------------------------------------------------------
 # HSK 1 vocabulary
@@ -1051,6 +1061,106 @@ def make_note(model, vocab_id, chinese, pinyin, english, sentence, sent_py, sent
     )
 
 
+def _restore_learning_state(output_path: str, deck_name: str, vocab_list) -> None:
+    """Copy the supplied export's scheduling state onto matching generated cards."""
+    if not os.path.isfile(LEARNING_STATE_EXPORT):
+        raise RuntimeError(f"Learning-state export not found: {LEARNING_STATE_EXPORT}")
+
+    expected_ids = {entry[0] for entry in vocab_list}
+    with tempfile.TemporaryDirectory() as temp_dir:
+        with zipfile.ZipFile(LEARNING_STATE_EXPORT) as archive:
+            archive.extract("collection.anki21b", temp_dir)
+        with open(os.path.join(temp_dir, "collection.anki21b"), "rb") as compressed:
+            with open(os.path.join(temp_dir, "source.sqlite"), "wb") as source_file:
+                zstandard.ZstdDecompressor().copy_stream(compressed, source_file)
+
+        package_dir = os.path.join(temp_dir, "package")
+        with zipfile.ZipFile(output_path) as archive:
+            archive.extractall(package_dir)
+        target_path = os.path.join(package_dir, "collection.anki2")
+
+        source = sqlite3.connect(os.path.join(temp_dir, "source.sqlite"))
+        target = sqlite3.connect(target_path)
+        try:
+            source_deck_ids = {
+                deck_id for deck_id, name in source.execute("SELECT id, name FROM decks")
+                if name == deck_name
+            }
+            if len(source_deck_ids) != 1:
+                raise RuntimeError(f"Expected exactly one {deck_name!r} deck in the export.")
+            source_deck_id = source_deck_ids.pop()
+
+            source_cards = {}
+            for row in source.execute(
+                """
+                SELECT c.id, c.nid, c.ord, c.type, c.queue, c.due, c.ivl, c.factor,
+                       c.reps, c.lapses, c.left, c.odue, c.odid, c.flags, c.data, n.flds
+                FROM cards c JOIN notes n ON n.id = c.nid
+                WHERE c.did = ?
+                """,
+                (source_deck_id,),
+            ):
+                vocab_id = row[-1].split("\x1f", 1)[0]
+                if vocab_id in expected_ids:
+                    source_cards[(vocab_id, row[2])] = row[:-1]
+
+            target_cards = {}
+            for card_id, ordinal, fields in target.execute(
+                """
+                SELECT c.id, c.ord, n.flds
+                FROM cards c JOIN notes n ON n.id = c.nid
+                """
+            ):
+                vocab_id = fields.split("\x1f", 1)[0]
+                if vocab_id in expected_ids:
+                    target_cards[(vocab_id, ordinal)] = card_id
+
+            restored_ids = {vocab_id for vocab_id, _ in source_cards}
+            if restored_ids != expected_ids - {
+                "hsk2_suiran_danshi",
+                "hsk2_yinwei_suoyi",
+            }:
+                raise RuntimeError("The learning-state export does not match the deck vocabulary.")
+
+            source_to_target = {}
+            for key, source_card in source_cards.items():
+                target_card_id = target_cards.get(key)
+                if target_card_id is None:
+                    raise RuntimeError(f"Generated card missing for {key[0]!r}.")
+                source_to_target[source_card[0]] = target_card_id
+                target.execute(
+                    """
+                    UPDATE cards
+                    SET type = ?, queue = ?, due = ?, ivl = ?, factor = ?, reps = ?,
+                        lapses = ?, left = ?, odue = ?, odid = ?, flags = ?, data = ?
+                    WHERE id = ?
+                    """,
+                    (*source_card[3:15], target_card_id),
+                )
+
+            for revlog in source.execute(
+                "SELECT id, cid, usn, ease, ivl, lastIvl, factor, time, type FROM revlog"
+            ):
+                target_card_id = source_to_target.get(revlog[1])
+                if target_card_id is not None:
+                    target.execute(
+                        "INSERT INTO revlog VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                        (revlog[0], target_card_id, *revlog[2:]),
+                    )
+            target.commit()
+        finally:
+            source.close()
+            target.close()
+
+        rebuilt_path = os.path.join(temp_dir, "rebuilt.apkg")
+        with zipfile.ZipFile(rebuilt_path, "w", zipfile.ZIP_DEFLATED) as archive:
+            for root, _, files in os.walk(package_dir):
+                for filename in files:
+                    file_path = os.path.join(root, filename)
+                    archive.write(file_path, os.path.relpath(file_path, package_dir))
+        shutil.move(rebuilt_path, output_path)
+
+
 def build_deck(vocab_list, model, deck_id, deck_name, output_path: str) -> None:
     deck = genanki.Deck(deck_id, deck_name)
     media_files = []
@@ -1087,6 +1197,7 @@ def build_deck(vocab_list, model, deck_id, deck_name, output_path: str) -> None:
     package = genanki.Package(deck)
     package.media_files = media_files
     package.write_to_file(output_path)
+    _restore_learning_state(output_path, deck_name, vocab_list)
 
     total = len(vocab_list)
     with_audio = total - len(missing_audio)

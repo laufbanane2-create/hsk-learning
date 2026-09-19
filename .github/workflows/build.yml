@@ -64,8 +64,8 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Install genanki
-        run: pip install genanki
+      - name: Install deck dependencies
+        run: pip install genanki zstandard==0.25.0
 
       - name: Build HSK 1 Anki deck
         run: python3 scripts/generate_anki_deck.py --level hsk1 --output hsk1.apkg
