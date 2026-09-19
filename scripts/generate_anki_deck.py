@@ -941,69 +941,35 @@ _VOCAB_FIELDS = [
     {"name": "SentenceEnglish"},
     {"name": "Audio"},      # [sound:{vocab_id}.mp3] or empty
     {"name": "WordAudio"},  # [sound:{vocab_id}_word.mp3] or empty
+    {"name": "WrittenSentence"},
+    {"name": "WrittenSentencePinyin"},
+    {"name": "WrittenSentenceEnglish"},
 ]
 
 _CARD_TEMPLATES = [
-    # ── Card 1: Word Recognition ─────────────────────────────────────
+    # One card per word keeps all prompts on the same review schedule.
     {
-        "name": "Word",
-        "qfmt": '<div class="chinese">{{Chinese}}</div>',
-        "afmt": """\
-{{FrontSide}}
-<hr>
-<div class="pinyin">{{Pinyin}}</div>
-<div class="english">{{English}}</div>
-{{WordAudio}}
-<br>
-<div class="sentence-zh">{{Sentence}}</div>
-<div class="sentence-py">{{SentencePinyin}}</div>
-<div class="sentence-en">{{SentenceEnglish}}</div>
-{{Audio}}
-""",
-    },
-    # ── Card 2: Sentence Reading ─────────────────────────────────────
-    {
-        "name": "Sentence",
+        "name": "Vocabulary",
         "qfmt": """\
-<div class="sentence-zh">{{Sentence}}</div>
+<div class="chinese">{{Chinese}}</div>
+<div class="sentence-zh">{{WrittenSentence}}</div>
+{{Audio}}
 """,
         "afmt": """\
 {{FrontSide}}
 <hr>
-<div class="sentence-py">{{SentencePinyin}}</div>
-<div class="sentence-en">{{SentenceEnglish}}</div>
-<br>
-<div class="chinese">{{Chinese}}</div>
 <div class="pinyin">{{Pinyin}}</div>
 <div class="english">{{English}}</div>
 {{WordAudio}}
-{{Audio}}
-""",
-    },
-    # ── Card 3: Audio Listening ──────────────────────────────────────
-    {
-        "name": "Audio",
-        "qfmt": """\
-{{#Audio}}
-<div style="font-size:64px">🔊</div>
-{{Audio}}
-<div style="color:#aaa; font-size:14px">What is the sentence and word?</div>
-{{/Audio}}
-{{^Audio}}
-[not available for this card]
-{{/Audio}}
-""",
-        "afmt": """\
-{{FrontSide}}
-<hr>
+<br>
 <div class="sentence-zh">{{Sentence}}</div>
 <div class="sentence-py">{{SentencePinyin}}</div>
 <div class="sentence-en">{{SentenceEnglish}}</div>
 <br>
-<div class="chinese">{{Chinese}}</div>
-<div class="pinyin">{{Pinyin}}</div>
-<div class="english">{{English}}</div>
-{{WordAudio}}
+<div class="sentence-zh">{{WrittenSentence}}</div>
+<div class="sentence-py">{{WrittenSentencePinyin}}</div>
+<div class="sentence-en">{{WrittenSentenceEnglish}}</div>
+<br>
 """,
     },
 ]
@@ -1027,7 +993,8 @@ HSK1_MODEL = genanki.Model(
 
 
 def make_note(model, vocab_id, chinese, pinyin, english, sentence, sent_py, sent_en,
-              audio_tag, word_audio_tag):
+              audio_tag, word_audio_tag, written_sentence, written_sent_py,
+              written_sent_en):
     """Return a genanki.Note for one vocabulary item.
 
     audio_tag      – [sound:xxx.mp3] for the example sentence, or empty.
@@ -1045,6 +1012,9 @@ def make_note(model, vocab_id, chinese, pinyin, english, sentence, sent_py, sent
             sent_en,
             audio_tag,
             word_audio_tag,
+            written_sentence,
+            written_sent_py,
+            written_sent_en,
         ],
         # Stable GUID derived from the vocab id so re-runs update existing notes
         guid=genanki.guid_for(vocab_id),
@@ -1058,8 +1028,10 @@ def build_deck(vocab_list, model, deck_id, deck_name, output_path: str) -> None:
     missing_audio = []
     missing_word_audio = []
 
-    for entry in vocab_list:
+    for index, entry in enumerate(vocab_list):
         vocab_id, chinese, pinyin, english, sentence, sent_py, sent_en = entry
+        written_entry = vocab_list[(index + 1) % len(vocab_list)]
+        _, _, _, _, written_sentence, written_sent_py, written_sent_en = written_entry
         mp3_name = f"{vocab_id}.mp3"
         mp3_path = os.path.join(AUDIO_DIR, mp3_name)
 
@@ -1081,7 +1053,8 @@ def build_deck(vocab_list, model, deck_id, deck_name, output_path: str) -> None:
             missing_word_audio.append(vocab_id)
 
         note = make_note(model, vocab_id, chinese, pinyin, english,
-                         sentence, sent_py, sent_en, audio_tag, word_audio_tag)
+                         sentence, sent_py, sent_en, audio_tag, word_audio_tag,
+                         written_sentence, written_sent_py, written_sent_en)
         deck.add_note(note)
 
     package = genanki.Package(deck)
@@ -1092,8 +1065,8 @@ def build_deck(vocab_list, model, deck_id, deck_name, output_path: str) -> None:
     with_audio = total - len(missing_audio)
     with_word_audio = total - len(missing_word_audio)
     print(f"Created {output_path}")
-    print(f"  {total} vocabulary entries → {total * 3} cards "
-          f"(3 per entry: Word / Sentence / Audio)")
+    print(f"  {total} vocabulary entries → {total} cards "
+          "(one combined vocabulary, translation, and listening card per entry)")
     print(f"  Sentence audio files embedded: {with_audio}/{total}")
     print(f"  Word audio files embedded: {with_word_audio}/{total}")
     if missing_audio:

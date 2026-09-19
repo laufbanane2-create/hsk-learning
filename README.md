@@ -42,13 +42,14 @@ python scripts/generate_anki_deck.py -o ~/Desktop/hsk2.apkg  # custom path
 python scripts/generate_anki_deck.py --level hsk1 -o ~/Desktop/hsk1.apkg
 ```
 
-Each deck contains **150 vocabulary entries × 3 card types = 450 cards**. HSK 1 contains its 150 words, and HSK 2 follows the official 150-word HSK 2 list.
+Each deck contains **150 vocabulary entries = 150 cards**. Each card keeps one
+learning schedule per word, so related prompts do not create separately due
+cards on following days. HSK 1 contains its 150 words, and HSK 2 follows the
+official 150-word HSK 2 list.
 
-| Card type | Front | Back |
-|-----------|-------|------|
-| **Word** | Chinese character(s) | Pinyin, English, word audio, example sentence, and sentence audio |
-| **Sentence** | Chinese example sentence | Pinyin, English translation, word, word audio, and sentence audio |
-| **Audio** | 🔊 spoken example sentence and prompt | Chinese sentence, pinyin, English, word, and word audio |
+| Card | Front | Back |
+|------|-------|------|
+| **Vocabulary** | Chinese word, a different written HSK sentence to translate, and the word's spoken example sentence | Pinyin and English for the word, plus pinyin and English for both sentences |
 
 Audio files from `audio/` are embedded automatically when present.
 
