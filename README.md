@@ -81,9 +81,9 @@ Every entry includes:
 
 Pull requests are welcome. When adding vocabulary:
 
-1. Add the full entry (id, chinese, pinyin, english, sentence, sentence_pinyin, sentence_english) to the appropriate `HSK1_VOCAB` or `HSK2_VOCAB` list in `scripts/generate_anki_deck.py`.
+1. Add the full entry (id, chinese, pinyin, english, sentence, sentence_pinyin, sentence_english) to the appropriate `HSK1_VOCAB` or `HSK2_VOCAB` list in `scripts/generate_anki_deck.py`. These lists are the single source of truth for both deck content and audio text.
 2. Add its Chinese word to the corresponding `OFFICIAL_HSK1_WORDS` or `OFFICIAL_HSK2_WORDS` list so it is included in the deck.
-3. Keep IDs unique and prefixed with the level, e.g. `hsk1_apple`, `hsk2_compare`. The audio script automatically supplements its vocabulary from the deck lists.
+3. Keep IDs unique and prefixed with the level, e.g. `hsk1_apple`, `hsk2_compare`. The audio script derives its vocabulary directly from the deck lists.
 
 ## License
 
