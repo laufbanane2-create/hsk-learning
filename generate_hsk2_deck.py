@@ -5,12 +5,15 @@ Usage:
     python3 generate_hsk2_deck.py
     python3 generate_hsk2_deck.py --output /path/to/HSK2_DualTask_Deck.apkg
 
-The script is self-contained apart from genanki.  Anki's native Chinese TTS
-renders the listening prompt from the hard-coded Chinese audio sentence.
+The script is self-contained apart from genanki.  It embeds the repository's
+pre-generated sentence MP3s, so listening prompts never depend on Anki TTS.
 """
 
 import argparse
+import json
 import re
+import sqlite3
+import zipfile
 from pathlib import Path
 
 import genanki
@@ -22,6 +25,7 @@ DECK_NAME = "HSK 2 - Offizieller Wortschatz (Hör- & Leseverstehen)"
 OUTPUT_FILE = "HSK2_DualTask_Deck.apkg"
 SCRIPT_DIR = Path(__file__).resolve().parent
 AUDIO_DIR = SCRIPT_DIR / "audio"
+PINYIN_VALUE_PATTERN = re.compile(r"^[A-Za-zÀ-ɏ ，。！？、]+$")
 
 # The order is the official HSK 2.0 list of 150 additions to HSK 1.  Every
 # vocabulary row is ultimately expanded with a hard-coded pinyin transcription
@@ -654,8 +658,162 @@ AUDIO_SENTENCE_PINYIN = {
     "hsk2_zuobian": "Yín háng zài zuǒ biān。",
 }
 
+READING_SENTENCE_PINYIN = {
+    "hsk2_ba": "Wǒ men xiàn zài huí jiā ba。",
+    "hsk2_bai": "Zhuō zi shàng yǒu yì zhāng bái zhǐ。",
+    "hsk2_bai2": "Zhè lǐ yǒu liǎng bǎi gè rén。",
+    "hsk2_bangzhu": "Lǎo shī cháng cháng bāng zhù xué shēng。",
+    "hsk2_baozhi": "Zhè fèn bào zhǐ shì jīn tiān de。",
+    "hsk2_bi": "Wǒ bǐ dì di gāo。",
+    "hsk2_bie": "Bié zài zhè lǐ shuō huà。",
+    "hsk2_binguan": "Zhè jiā bīn guǎn lí jī chǎng hěn jìn。",
+    "hsk2_chang": "Tā de tóu fa hěn cháng。",
+    "hsk2_changge": "Wǒ men yì qǐ chàng gē ba。",
+    "hsk2_chu": "Qǐng cóng zhè ge mén chū qù。",
+    "hsk2_chuan": "Tā měi tiān chuān lán sè de yī fu。",
+    "hsk2_ci": "Zhè shì wǒ dì yī cì lái zhōng guó。",
+    "hsk2_cong": "Qǐng cóng zhè lǐ kāi shǐ dú。",
+    "hsk2_cuo": "Zhè ge dá àn cuò le。",
+    "hsk2_dalanqiu": "Xià wǔ wǒ men qù dǎ lán qiú。",
+    "hsk2_dajia": "Dà jiā dōu zài jiào shì lǐ。",
+    "hsk2_dao": "Qǐng nǐ bā diǎn dào gōng sī。",
+    "hsk2_de2": "Nǐ pǎo de tài kuài le。",
+    "hsk2_deng": "Wǒ zài mén kǒu děng nǐ。",
+    "hsk2_didi": "Dì di jīn nián shí suì。",
+    "hsk2_diyi": "Jīn tiān shì wǒ dì yī tiān shàng bān。",
+    "hsk2_dong2": "Zhè běn shū wǒ kàn bù dǒng。",
+    "hsk2_dui": "Zhè ge dì fang duì ma？",
+    "hsk2_fangjian": "Qǐng jìn wǒ de fáng jiān。",
+    "hsk2_feichang": "Wǒ fēi cháng xǐ huān zhè běn shū。",
+    "hsk2_fuwuyuan": "Fú wù yuán zhèng zài ná cài dān。",
+    "hsk2_gao": "Zhè ge zhuō zi tài gāo le。",
+    "hsk2_gaosu": "Mā ma gào su wǒ yí ge shì qing。",
+    "hsk2_gege": "Gē ge zài gōng sī shàng bān。",
+    "hsk2_gei": "Qǐng gěi lǎo shī zhè běn shū。",
+    "hsk2_gonggongqiche": "Gōng gòng qì chē mǎ shàng jiù lái。",
+    "hsk2_gongsi": "Wǒ jiā lí gōng sī bù yuǎn。",
+    "hsk2_gui": "Zhè ge píng guǒ bù guì。",
+    "hsk2_guo": "Nǐ kàn guo zhè ge diàn yǐng ma？",
+    "hsk2_hai": "Wǒ hái xiǎng hē yì bēi chá。",
+    "hsk2_haizi": "Hái zi zài wài miàn wán。",
+    "hsk2_haochi": "Zhè jiā diàn de miàn tiáo hěn hǎo chī。",
+    "hsk2_hei": "Wǒ de shū bāo shì hēi de。",
+    "hsk2_hong": "Tā xǐ huān hóng huā。",
+    "hsk2_huochezhan": "Wǒ men zài huǒ chē zhàn jiàn。",
+    "hsk2_jichang": "Jī chǎng lí zhè lǐ hěn yuǎn。",
+    "hsk2_jidan": "Bīng xiāng lǐ yǒu jī dàn ma？",
+    "hsk2_jian": "Zhè shì yí jiàn zhòng yào de shì qing。",
+    "hsk2_jiaoshi": "Xué shēng dōu zài jiào shì xué xí。",
+    "hsk2_jiejie": "Jiě jie xǐ huān hē kā fēi。",
+    "hsk2_jieshao": "Qǐng jiè shào nǐ de péng you。",
+    "hsk2_jin2": "Chāo shì jiù zài xué xiào fù jìn。",
+    "hsk2_jin": "Bú yào jìn zhè ge fáng jiān。",
+    "hsk2_jiu": "Tā yì huí jiā jiù shuì jiào。",
+    "hsk2_juede": "Nǐ jué de zhè ge zěn me yàng？",
+    "hsk2_kafei": "Zǎo shang wǒ bù hē kā fēi。",
+    "hsk2_kaishi": "Diàn yǐng bā diǎn kāi shǐ。",
+    "hsk2_kaoshi": "Míng tiān wǒ men kǎo shì。",
+    "hsk2_keneng": "Míng tiān kě néng xià yǔ。",
+    "hsk2_keyi": "Zhè lǐ kě yǐ zuò ma？",
+    "hsk2_ke3": "Hàn yǔ kè jǐ diǎn kāi shǐ？",
+    "hsk2_kuai2": "Qǐng kuài yì diǎn，wǒ men yào chí dào le。",
+    "hsk2_kuaile": "Hái zi men wán de hěn kuài lè。",
+    "hsk2_lei": "Pǎo bù yǐ hòu tā hěn lèi。",
+    "hsk2_li": "Běi jīng lí Shàng hǎi hěn yuǎn。",
+    "hsk2_liang": "Qǐng gěi wǒ liǎng bēi shuǐ。",
+    "hsk2_ling": "Zhè ge hào mǎ zuì hòu shì líng。",
+    "hsk2_lu": "Qǐng gào su wǒ qù xué xiào de lù。",
+    "hsk2_luyou": "Qù nián wǒ men qù zhōng guó lǚ yóu。",
+    "hsk2_mai": "Tā men mài kā fēi hé chá。",
+    "hsk2_man": "Zhè liàng chē zǒu de hěn màn。",
+    "hsk2_mang": "Mā ma xià wǔ bù máng。",
+    "hsk2_mei": "Měi ge xué shēng dōu yǒu yì běn shū。",
+    "hsk2_meimei": "Mèi mei zài xué xiào xué xí Hàn yǔ。",
+    "hsk2_men": "Mén zài fáng jiān de yòu biān。",
+    "hsk2_miantiao": "Zhè wǎn miàn tiáo hěn hǎo chī。",
+    "hsk2_nan3": "Nà ge nán xué shēng shì wǒ gē ge。",
+    "hsk2_nin": "Nín xiǎng hē chá ma？",
+    "hsk2_niunai": "Qǐng gěi hái zi yì bēi niú nǎi。",
+    "hsk2_nv": "Nà ge nǚ xué shēng shì wǒ jiě jie。",
+    "hsk2_pangbian": "Qǐng zuò zài wǒ páng biān。",
+    "hsk2_paobu": "Tā xǐ huān zài gōng yuán pǎo bù。",
+    "hsk2_pianyi": "Zhè ge fáng jiān bù pián yi。",
+    "hsk2_piao": "Nǐ de huǒ chē piào zài nǎ lǐ？",
+    "hsk2_qizi": "Tā de qī zi zài jiā。",
+    "hsk2_qichuang": "Hái zi měi tiān zǎo shang liù diǎn qǐ chuáng。",
+    "hsk2_qian2": "Zhè běn shū yǒu yì qiān yè。",
+    "hsk2_qianbi": "Qǐng yòng qiān bǐ xiě míng zi。",
+    "hsk2_qing2": "Míng tiān huì shì qíng tiān ma？",
+    "hsk2_qunian": "Qù nián dōng tiān hěn lěng。",
+    "hsk2_rang": "Lǎo shī ràng wǒ men dú shū。",
+    "hsk2_ri": "Wǒ de shēng rì shì shí yuè èr rì。",
+    "hsk2_shangban": "Bà ba xīng qī yī bù shàng bān。",
+    "hsk2_shenti": "Yùn dòng duì shēn tǐ hěn hǎo。",
+    "hsk2_shengbing": "Tā shēng bìng le，bù néng shàng bān。",
+    "hsk2_shengri": "Zhù nǐ shēng rì kuài lè！",
+    "hsk2_shijian": "Xiàn zài méi yǒu shí jiān chī fàn。",
+    "hsk2_shiqing": "Zhè jiàn shì qing hěn zhòng yào。",
+    "hsk2_shoubiao": "Nǐ de shǒu biǎo hěn piào liang。",
+    "hsk2_shouji": "Qǐng yòng shǒu jī gěi wǒ dǎ diàn huà。",
+    "hsk2_shuohua": "Tā zhèng zài gēn lǎo shī shuō huà。",
+    "hsk2_song": "Wǒ sòng péng you qù jī chǎng。",
+    "hsk2_suiran_danshi": "Suī rán hěn lèi，dàn shì tā hái zài xué xí。",
+    "hsk2_ta3": "Wǒ de shǒu jī zài zhè lǐ，tā hěn xīn。",
+    "hsk2_tizuqiu": "Gē ge xià wǔ qù tī zú qiú。",
+    "hsk2_ti": "Lǎo shī zài wèn yí ge tí。",
+    "hsk2_tiaowu": "Wǎn shang wǒ men yì qǐ tiào wǔ ba。",
+    "hsk2_wai": "Wài miàn hěn lěng，qǐng jìn lái。",
+    "hsk2_wan2": "Qǐng xiě wán zhè ge tí。",
+    "hsk2_wan": "Wǒ men qù gōng yuán wán ba。",
+    "hsk2_wanshang": "Wǒ wǎn shang kàn shū。",
+    "hsk2_wang": "Huǒ chē wǎng Běi jīng kāi。",
+    "hsk2_weishenme": "Tā wèi shén me bù lái？",
+    "hsk2_wen": "Qǐng wèn lǎo shī zhè ge tí。",
+    "hsk2_wenti": "Nǐ yǒu shén me wèn tí ma？",
+    "hsk2_xigua": "Zhè ge xī guā hěn tián。",
+    "hsk2_xiwang": "Xī wàng míng tiān tiān qì hǎo。",
+    "hsk2_xi": "Qǐng xǐ nǐ de shǒu。",
+    "hsk2_xiaoshi": "Cóng zhè lǐ dào jī chǎng yào yí ge xiǎo shí。",
+    "hsk2_xiao": "Tīng dào zhè ge gù shi，dà jiā dōu xiào le。",
+    "hsk2_xin": "Zhè shì wǒ de xīn shǒu jī。",
+    "hsk2_xing": "Wǒ xìng Wáng，tā xìng Lǐ。",
+    "hsk2_xiuxi": "Wǒ men zhōng wǔ xiū xi yí ge xiǎo shí。",
+    "hsk2_xue": "Hái zi xǐ huān zài xuě lǐ wán。",
+    "hsk2_yanse": "Zhè jiàn yī fu de yán sè hěn hǎo kàn。",
+    "hsk2_yanjing": "Bú yào yòng shǒu pèng yǎn jing。",
+    "hsk2_yangrou": "Zhè jiā diàn de yáng ròu hěn hǎo chī。",
+    "hsk2_yao": "Nǐ yào qù xué xiào ma？",
+    "hsk2_yao2": "Zhè ge yào yì tiān chī liǎng cì。",
+    "hsk2_ye": "Tā yě huì shuō Hàn yǔ。",
+    "hsk2_yixia": "Wǒ xiǎng wèn nǐ yí xià。",
+    "hsk2_yijing": "Wǒ yǐ jīng chī guo fàn le。",
+    "hsk2_yiqi": "Wǒ hé jiě jie yì qǐ xué xí。",
+    "hsk2_yisi": "Wǒ bù dǒng zhè ge cí de yì si。",
+    "hsk2_yin": "Yīn tiān de shí hou bù rè。",
+    "hsk2_yinwei_suoyi": "Yīn wèi hěn máng，suǒ yǐ tā méi lái。",
+    "hsk2_youyong": "Xià tiān wǒ men qù yóu yǒng。",
+    "hsk2_youbian": "Qǐng zuò zài wǒ de yòu biān。",
+    "hsk2_yu": "Jīn tiān de yú hěn xīn xiān。",
+    "hsk2_yuan": "Wǒ jiā lí zhè lǐ bù yuǎn。",
+    "hsk2_yundong": "Měi tiān yùn dòng duì shēn tǐ hǎo。",
+    "hsk2_zai2": "Míng tiān wǒ men zài jiàn。",
+    "hsk2_zaoshang": "Zǎo shang hǎo，nǐ chī fàn le ma？",
+    "hsk2_zhangfu": "Tā de zhàng fu zài gōng sī gōng zuò。",
+    "hsk2_zhao": "Nǐ zài zhǎo shén me？",
+    "hsk2_zhe2": "Mén kāi zhe，qǐng jìn。",
+    "hsk2_zhen": "Jīn tiān tiān qì zhēn hǎo。",
+    "hsk2_zhengzai": "Mā ma zhèng zài zuò fàn。",
+    "hsk2_zhi": "Zhè lǐ zhǐ yǒu yí ge rén。",
+    "hsk2_zhidao": "Wǒ bù zhī dào zhè ge dì fang。",
+    "hsk2_zhunbei": "Qǐng zhǔn bèi hǎo nǐ de shū。",
+    "hsk2_zou": "Tā měi tiān zǒu lù qù gōng sī。",
+    "hsk2_zui": "Wǒ zuì xǐ huān zhè ge yán sè。",
+    "hsk2_zuobian": "Qǐng zuò zài wǒ de zuǒ biān。",
+}
+
 HSK2_VOCAB = [
-    entry[:5] + (AUDIO_SENTENCE_PINYIN[entry[0]],) + entry[5:]
+    entry[:5] + (AUDIO_SENTENCE_PINYIN[entry[0]],) + entry[5:7]
+    + (READING_SENTENCE_PINYIN[entry[0]],) + entry[7:]
     for entry in HSK2_VOCAB
 ]
 
@@ -668,14 +826,15 @@ CSS = """
   padding: 20px;
 }
 .word { font-size: 48px; margin: 18px 0 8px; }
-.pinyin { color: #666; font-size: 22px; margin: 6px 0; }
+.pinyin { color: #555; font-size: 22px; margin: 6px 0; }
 .german { font-size: 20px; margin: 8px 0; }
 .sentence { font-size: 30px; margin: 12px 0; }
-.hint { color: #888; font-size: 15px; }
-.audio-only { font-size: 0; height: 0; overflow: hidden; }
+.hint { color: #666; font-size: 15px; }
+.audio-control { margin: 28px 0; }
+.audio-control .replay-button { font-size: 32px; }
 hr { border: 0; border-top: 1px solid #ddd; margin: 18px 0; }
 .nightMode .card { color: #ddd; }
-.nightMode .pinyin, .nightMode .hint { color: #aaa; }
+.nightMode .pinyin, .nightMode .hint { color: #bbb; }
 .nightMode hr { border-top-color: #555; }
 """
 
@@ -684,9 +843,11 @@ FIELDS = [
     {"name": "Pinyin"},
     {"name": "Meaning"},
     {"name": "AudioSentenceCN"},
+    {"name": "AudioSentenceSound"},
     {"name": "AudioSentencePY"},
     {"name": "AudioSentenceDE"},
     {"name": "ReadingSentenceCN"},
+    {"name": "ReadingSentencePY"},
     {"name": "ReadingSentenceDE"},
 ]
 
@@ -699,6 +860,7 @@ TEMPLATES = [
         "afmt": """\
 {{FrontSide}}
 <hr>
+<div class="pinyin">{{ReadingSentencePY}}</div>
 <div class="german">{{ReadingSentenceDE}}</div>
 <div class="word">{{Hanzi}}</div>
 <div class="pinyin">[{{Pinyin}}]</div>
@@ -708,8 +870,8 @@ TEMPLATES = [
     {
         "name": "2. Hörverstehen",
         "qfmt": """\
-<div class="audio-only">{{AudioSentenceCN}}</div>
-<div class="hint">[Audio-Wiedergabe]</div>
+<div class="audio-control">{{AudioSentenceSound}}</div>
+<div class="hint">Audio wiederholen</div>
 """,
         "afmt": """\
 {{FrontSide}}
@@ -722,39 +884,60 @@ TEMPLATES = [
 <div class="german">— {{Meaning}}</div>
 """,
     },
+    {
+        "name": "3. Wortschatz",
+        "qfmt": """\
+<div class="hint">[Wortschatz]</div>
+<div class="word">{{Hanzi}}</div>
+""",
+        "afmt": """\
+{{FrontSide}}
+<hr>
+<div class="pinyin">{{Pinyin}}</div>
+<div class="german">— {{Meaning}}</div>
+""",
+    },
 ]
 
 
 def validate_deck_structure() -> None:
-    """Keep the model limited to the two sentence-comprehension tasks."""
+    """Keep the three task templates and their field contracts in sync."""
     expected_fields = [
         "Hanzi",
         "Pinyin",
         "Meaning",
         "AudioSentenceCN",
+        "AudioSentenceSound",
         "AudioSentencePY",
         "AudioSentenceDE",
         "ReadingSentenceCN",
+        "ReadingSentencePY",
         "ReadingSentenceDE",
     ]
     if [field["name"] for field in FIELDS] != expected_fields:
-        raise ValueError("The dual-task model must have exactly the eight expected fields.")
+        raise ValueError("The model must have exactly the ten expected fields.")
 
-    if [template["name"] for template in TEMPLATES] != ["1. Leseverstehen", "2. Hörverstehen"]:
-        raise ValueError("The model must contain only the reading and listening templates.")
+    if [template["name"] for template in TEMPLATES] != [
+            "1. Leseverstehen", "2. Hörverstehen", "3. Wortschatz"]:
+        raise ValueError("The model must contain reading, listening, and vocabulary templates.")
 
-    reading, listening = TEMPLATES
+    reading, listening, vocabulary = TEMPLATES
     reading_front_fields = re.findall(r"{{([^}]+)}}", reading["qfmt"])
     if reading_front_fields != ["ReadingSentenceCN"] or reading["qfmt"].strip() != (
             '<div class="sentence">{{ReadingSentenceCN}}</div>'):
         raise ValueError("The reading-card front must show only its reading sentence.")
-    if "{{Hanzi}}" not in reading["afmt"]:
-        raise ValueError("The reading-card back must reveal the focus word.")
+    if "{{ReadingSentencePY}}" not in reading["afmt"] or "{{Hanzi}}" not in reading["afmt"]:
+        raise ValueError("The reading-card back must reveal its pinyin and focus word.")
     listening_front_fields = re.findall(r"{{([^}]+)}}", listening["qfmt"])
-    if listening_front_fields != ["AudioSentenceCN"]:
-        raise ValueError("The listening-card front must play only its audio sentence.")
+    if listening_front_fields != ["AudioSentenceSound"]:
+        raise ValueError("The listening-card front must show only the embedded sound control.")
     if "{{AudioSentenceCN}}" not in listening["afmt"] or "{{Hanzi}}" not in listening["afmt"]:
         raise ValueError("The listening-card back must reveal the sentence and focus word.")
+    vocabulary_front_fields = re.findall(r"{{([^}]+)}}", vocabulary["qfmt"])
+    if vocabulary_front_fields != ["Hanzi"]:
+        raise ValueError("The vocabulary-card front must show only the isolated word.")
+    if "{{Pinyin}}" not in vocabulary["afmt"] or "{{Meaning}}" not in vocabulary["afmt"]:
+        raise ValueError("The vocabulary-card back must reveal pinyin and meaning.")
 
 
 def validate_vocabulary() -> None:
@@ -770,42 +953,76 @@ def validate_vocabulary() -> None:
         raise ValueError("Vocabulary words and stable IDs must be unique.")
     if set(AUDIO_SENTENCE_PINYIN) != set(ids):
         raise ValueError("Every HSK 2 entry must have one hard-coded audio-sentence pinyin value.")
+    if set(READING_SENTENCE_PINYIN) != set(ids):
+        raise ValueError("Every HSK 2 entry must have one hard-coded reading-sentence pinyin value.")
 
     for entry in HSK2_VOCAB:
-        if len(entry) != 10 or not entry[0].startswith("hsk2_"):
+        if len(entry) != 11 or not entry[0].startswith("hsk2_"):
             raise ValueError(f"Invalid vocabulary entry: {entry!r}")
-        _, word, pinyin, german, audio_zh, audio_py, audio_de, reading_zh, reading_de, filename = entry
-        if not all((word, pinyin, german, audio_zh, audio_py, audio_de, reading_zh, reading_de, filename)):
+        (_, word, pinyin, german, audio_zh, audio_py, audio_de, reading_zh,
+         reading_py, reading_de, filename) = entry
+        if not all((word, pinyin, german, audio_zh, audio_py, audio_de, reading_zh,
+                    reading_py, reading_de, filename)):
             raise ValueError(f"Blank field in vocabulary entry {entry[0]!r}.")
         if audio_zh == reading_zh:
             raise ValueError(f"Examples must differ for {entry[0]!r}.")
         if filename != f"{entry[0]}.mp3":
             raise ValueError(f"Unexpected audio filename for {entry[0]!r}.")
+        if not PINYIN_VALUE_PATTERN.fullmatch(reading_py) or re.search(
+                r"\b(?:todo|tbd|placeholder|pinyin)\b", reading_py, re.IGNORECASE):
+            raise ValueError(f"Invalid reading-sentence pinyin for {entry[0]!r}.")
+
+
+def validate_generated_package(output_path: Path, expected_audio: set[str]) -> None:
+    """Verify the written Anki package, not just the in-memory deck."""
+    with zipfile.ZipFile(output_path) as package:
+        collection_name = "collection.anki2"
+        if collection_name not in package.namelist():
+            raise ValueError("Generated package does not contain an Anki collection.")
+
+        connection = sqlite3.connect(":memory:")
+        try:
+            connection.deserialize(package.read(collection_name))
+            note_count = connection.execute("SELECT COUNT(*) FROM notes").fetchone()[0]
+            card_count = connection.execute("SELECT COUNT(*) FROM cards").fetchone()[0]
+        finally:
+            connection.close()
+
+        media = json.loads(package.read("media"))
+        embedded_audio = set(media.values())
+
+    if note_count != 150 or card_count != 450:
+        raise ValueError(
+            f"Generated package has {note_count} notes and {card_count} cards; expected 150 and 450."
+        )
+    if embedded_audio != expected_audio:
+        raise ValueError(
+            f"Generated package embeds {len(embedded_audio)} expected sentence-audio files; "
+            "expected all 150."
+        )
 
 
 def build_deck(output_path: Path) -> None:
-    """Create the package, embedding available listening-sentence audio."""
+    """Create and verify the package with every listening-sentence MP3 embedded."""
     validate_deck_structure()
     validate_vocabulary()
     model = genanki.Model(MODEL_ID, DECK_NAME, fields=FIELDS, templates=TEMPLATES, css=CSS)
     deck = genanki.Deck(DECK_ID, DECK_NAME)
     media_files = []
-    missing_audio = []
 
-    for vocab_id, chinese, pinyin, german, audio_zh, audio_py, audio_de, reading_zh, reading_de, filename in HSK2_VOCAB:
+    for (vocab_id, chinese, pinyin, german, audio_zh, audio_py, audio_de, reading_zh,
+         reading_py, reading_de, filename) in HSK2_VOCAB:
         audio_path = AUDIO_DIR / filename
-        if audio_path.is_file():
-            audio_sentence = f"{audio_zh}[sound:{filename}]"
-            media_files.append(str(audio_path))
-        else:
-            audio_sentence = audio_zh
-            missing_audio.append(filename)
+        if not audio_path.is_file():
+            raise FileNotFoundError(f"Required listening audio is missing: {audio_path}")
+        media_files.append(str(audio_path))
 
         deck.add_note(genanki.Note(
             model=model,
             guid=genanki.guid_for("hsk2-german-standalone", vocab_id),
             fields=[
-                chinese, pinyin, german, audio_sentence, audio_py, audio_de, reading_zh, reading_de,
+                chinese, pinyin, german, audio_zh, f"[sound:{filename}]", audio_py, audio_de,
+                reading_zh, reading_py, reading_de,
             ],
         ))
 
@@ -813,12 +1030,11 @@ def build_deck(output_path: Path) -> None:
     package = genanki.Package(deck)
     package.media_files = media_files
     package.write_to_file(str(output_path))
+    validate_generated_package(output_path, {path.name for path in map(Path, media_files)})
 
     print(f"Created {output_path}")
-    print(f"  150 vocabulary entries -> 300 cards (2 templates per entry)")
+    print("  150 vocabulary entries -> 450 cards (3 templates per entry)")
     print(f"  Sentence audio files embedded: {len(media_files)}/150")
-    if missing_audio:
-        print("  Missing sentence audio: " + ", ".join(missing_audio))
 
 
 def main() -> None:
