@@ -10,5 +10,5 @@
 local.properties
 
 # Generated Anki decks (binary artifacts — regenerate with generate_hsk2_deck.py)
-/hsk2.apkg
+/HSK2_DualTask_Deck.apkg
 scripts/*.apkg

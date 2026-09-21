@@ -23,8 +23,8 @@ python scripts/generate_audio.py --api-key YOUR_ELEVENLABS_KEY
 ```
 
 Generated `.mp3` files are placed in `audio/` at the repository root. Each HSK
-2 entry has a word-audio file and an audio-example-sentence file. Run this
-before building the Anki deck so available audio is embedded in the cards.
+2 entry has a word-audio file and an audio-example-sentence file. The
+standalone deck uses Anki's native Chinese TTS for listening prompts.
 
 Options:
 
@@ -41,19 +41,19 @@ The standalone HSK 2 deck (`.apkg`) can be generated and imported directly into
 
 ```bash
 pip install genanki
-python generate_hsk2_deck.py                    # writes hsk2.apkg
-python generate_hsk2_deck.py -o ~/Desktop/hsk2.apkg
+python generate_hsk2_deck.py                    # writes HSK2_DualTask_Deck.apkg
+python generate_hsk2_deck.py -o ~/Desktop/HSK2_DualTask_Deck.apkg
 ```
 
 The deck contains **150 vocabulary entries × 2 card types = 300 cards** and is
-named **HSK 2 Vocabulary - Learning Progress**.
+named **HSK 2 - Offizieller Wortschatz (Hör- & Leseverstehen)**.
 
 | Card type | Front | Back |
 |-----------|-------|------|
-| **Audio sentence** | 🔊 spoken Chinese example sentence | Chinese sentence, German translation, word, pinyin, and German meaning |
-| **Reading sentence** | Chinese reading example sentence | German translation, word, pinyin, German meaning, and audio example |
+| **1. Leseverstehen** | Chinese reading sentence | German translation, word, pinyin, and German meaning |
+| **2. Hörverstehen** | `[Audio-Wiedergabe]` | Chinese sentence, sentence pinyin, German translation, word, pinyin, and German meaning |
 
-Audio files from `audio/` are embedded automatically when present.
+The listening-card front is prepared for later audio playback.
 
 ## Project Structure
 
@@ -74,14 +74,15 @@ Every entry includes:
 - Simplified Chinese character(s)
 - Pinyin with tone marks
 - German meaning
-- A Chinese audio-example sentence and German translation
+- A Chinese audio-example sentence, hard-coded pinyin, and German translation
 - A distinct Chinese reading-example sentence and German translation
 
 ## Contributing
 
 Pull requests are welcome. When adding vocabulary:
 
-1. Add the full nine-value entry to `HSK2_VOCAB` in `generate_hsk2_deck.py`.
+1. Add the vocabulary entry to `HSK2_VOCAB` and its hard-coded audio-sentence
+   pinyin to `AUDIO_SENTENCE_PINYIN` in `generate_hsk2_deck.py`.
 2. Add its Chinese word to `OFFICIAL_HSK2_WORDS` in the same order.
 3. Keep IDs unique and prefixed with `hsk2_`. The audio script derives its text
    directly from this standalone vocabulary list.
