@@ -2,9 +2,9 @@
 """
 Build-time audio generation script for HSK Learning.
 
-Generates MP3 files for every vocabulary word and example sentence declared in
-generate_anki_deck.py, using the ElevenLabs API (model: eleven_v3, voice:
-Bella), and writes them to audio/ at the repository root.
+Generates MP3 files for every HSK 2 vocabulary word and audio example sentence
+declared in generate_hsk2_deck.py, using the ElevenLabs API (model: eleven_v3,
+voice: Bella), and writes them to audio/ at the repository root.
 
 Usage:
     python3 scripts/generate_audio.py --api-key <ELEVENLABS_API_KEY>
@@ -26,42 +26,29 @@ import urllib.request
 
 
 def load_deck_vocabulary():
-    """Read the canonical, ordered HSK vocabulary from the deck source file."""
-    deck_path = os.path.join(os.path.dirname(__file__), "generate_anki_deck.py")
+    """Read the canonical, ordered HSK 2 vocabulary from the standalone deck."""
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    deck_path = os.path.join(project_root, "generate_hsk2_deck.py")
     with open(deck_path, encoding="utf-8") as source_file:
         module = ast.parse(source_file.read(), filename=deck_path)
 
-    assignments = {}
-    names = {
-        "HSK1_VOCAB",
-        "HSK2_VOCAB",
-        "OFFICIAL_HSK1_WORDS",
-        "OFFICIAL_HSK2_WORDS",
-    }
     for node in module.body:
         if (isinstance(node, ast.Assign) and len(node.targets) == 1
                 and isinstance(node.targets[0], ast.Name)
-                and node.targets[0].id in names
-                and isinstance(node.value, (ast.List, ast.Tuple))):
-            assignments[node.targets[0].id] = ast.literal_eval(node.value)
+                and node.targets[0].id == "HSK2_VOCAB"
+                and isinstance(node.value, ast.List)):
+            vocabulary = ast.literal_eval(node.value)
+            break
+    else:
+        raise RuntimeError(f"Missing HSK2_VOCAB in {deck_path}.")
 
-    required_names = names - assignments.keys()
-    if required_names:
-        raise RuntimeError(
-            f"Missing vocabulary declarations in {deck_path}: {sorted(required_names)}"
-        )
+    if len(vocabulary) != 150:
+        raise RuntimeError(f"Expected 150 HSK 2 entries in {deck_path}.")
 
-    vocabulary = []
-    for level in ("HSK1", "HSK2"):
-        entries_by_word = {entry[1]: entry for entry in assignments[f"{level}_VOCAB"]}
-        for word in assignments[f"OFFICIAL_{level}_WORDS"]:
-            try:
-                vocabulary.append(entries_by_word[word])
-            except KeyError as error:
-                raise RuntimeError(
-                    f"Missing {level} vocabulary entry for {word!r} in {deck_path}"
-                ) from error
-    return vocabulary
+    try:
+        return [(entry[0], entry[1], entry[4]) for entry in vocabulary]
+    except (IndexError, TypeError) as error:
+        raise RuntimeError(f"Invalid HSK2_VOCAB entry in {deck_path}.") from error
 
 
 VOCABULARY = load_deck_vocabulary()
@@ -120,10 +107,10 @@ def main() -> None:
 
     work = [
         (f"{vocab_id}.mp3", sentence)
-        for vocab_id, _, _, _, sentence, _, _ in VOCABULARY
+        for vocab_id, _, sentence in VOCABULARY
     ] + [
         (f"{vocab_id}_word.mp3", chinese)
-        for vocab_id, chinese, _, _, _, _, _ in VOCABULARY
+        for vocab_id, chinese, _ in VOCABULARY
     ]
 
     total = len(work)
