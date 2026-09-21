@@ -53,7 +53,7 @@ named **HSK 2 - Offizieller Wortschatz (Hör- & Leseverstehen)**.
 | **1. Leseverstehen** | Chinese reading sentence | German translation, word, pinyin, and German meaning |
 | **2. Hörverstehen** | `[Audio-Wiedergabe]` | Chinese sentence, sentence pinyin, German translation, word, pinyin, and German meaning |
 
-The listening-card front is prepared for later audio playback.
+Available pre-generated sentence audio is embedded into the listening cards.
 
 ## Project Structure
 

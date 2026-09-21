@@ -21,6 +21,7 @@ DECK_ID = 2059384721
 DECK_NAME = "HSK 2 - Offizieller Wortschatz (Hör- & Leseverstehen)"
 OUTPUT_FILE = "HSK2_DualTask_Deck.apkg"
 SCRIPT_DIR = Path(__file__).resolve().parent
+AUDIO_DIR = SCRIPT_DIR / "audio"
 
 # The order is the official HSK 2.0 list of 150 additions to HSK 1.  Every
 # vocabulary row is ultimately expanded with a hard-coded pinyin transcription
@@ -661,27 +662,21 @@ HSK2_VOCAB = [
 
 CSS = """
 .card {
-  background: #fafafa;
-  color: #222;
   font-family: Arial, "Noto Sans CJK SC", sans-serif;
   font-size: 20px;
-  padding: 20px;
   text-align: center;
+  padding: 20px;
 }
-.focus-word {
-  background: #e8f1fb;
-  border: 1px solid #aac8e8;
-  border-radius: 8px;
-  margin: 18px auto 0;
-  max-width: 520px;
-  padding: 14px;
-}
-.word { color: #1e3a5f; font-size: 48px; margin: 0; }
-.pinyin { color: #555; font-size: 22px; margin: 6px 0; }
-.german { color: #333; font-size: 20px; margin: 8px 0; }
-.sentence { color: #1e3a5f; font-size: 30px; margin: 12px 0; }
-.hint { color: #666; font-size: 15px; }
+.word { font-size: 48px; margin: 18px 0 8px; }
+.pinyin { color: #666; font-size: 22px; margin: 6px 0; }
+.german { font-size: 20px; margin: 8px 0; }
+.sentence { font-size: 30px; margin: 12px 0; }
+.hint { color: #888; font-size: 15px; }
+.audio-only { font-size: 0; height: 0; overflow: hidden; }
 hr { border: 0; border-top: 1px solid #ddd; margin: 18px 0; }
+.nightMode .card { color: #ddd; }
+.nightMode .pinyin, .nightMode .hint { color: #aaa; }
+.nightMode hr { border-top-color: #555; }
 """
 
 FIELDS = [
@@ -705,16 +700,15 @@ TEMPLATES = [
 {{FrontSide}}
 <hr>
 <div class="german">{{ReadingSentenceDE}}</div>
-<div class="focus-word">
 <div class="word">{{Hanzi}}</div>
 <div class="pinyin">[{{Pinyin}}]</div>
 <div class="german">— {{Meaning}}</div>
-</div>
 """,
     },
     {
         "name": "2. Hörverstehen",
         "qfmt": """\
+<div class="audio-only">{{AudioSentenceCN}}</div>
 <div class="hint">[Audio-Wiedergabe]</div>
 """,
         "afmt": """\
@@ -723,11 +717,9 @@ TEMPLATES = [
 <div class="sentence">{{AudioSentenceCN}}</div>
 <div class="pinyin">{{AudioSentencePY}}</div>
 <div class="german">{{AudioSentenceDE}}</div>
-<div class="focus-word">
 <div class="word">{{Hanzi}}</div>
 <div class="pinyin">[{{Pinyin}}]</div>
 <div class="german">— {{Meaning}}</div>
-</div>
 """,
     },
 ]
@@ -759,9 +751,8 @@ def validate_deck_structure() -> None:
     if "{{Hanzi}}" not in reading["afmt"]:
         raise ValueError("The reading-card back must reveal the focus word.")
     listening_front_fields = re.findall(r"{{([^}]+)}}", listening["qfmt"])
-    if listening_front_fields or listening["qfmt"].strip() != (
-            '<div class="hint">[Audio-Wiedergabe]</div>'):
-        raise ValueError("The listening-card front must contain only its audio-playback hint.")
+    if listening_front_fields != ["AudioSentenceCN"]:
+        raise ValueError("The listening-card front must play only its audio sentence.")
     if "{{AudioSentenceCN}}" not in listening["afmt"] or "{{Hanzi}}" not in listening["afmt"]:
         raise ValueError("The listening-card back must reveal the sentence and focus word.")
 
@@ -793,27 +784,41 @@ def validate_vocabulary() -> None:
 
 
 def build_deck(output_path: Path) -> None:
-    """Create the package with Anki native TTS for its listening prompts."""
+    """Create the package, embedding available listening-sentence audio."""
     validate_deck_structure()
     validate_vocabulary()
     model = genanki.Model(MODEL_ID, DECK_NAME, fields=FIELDS, templates=TEMPLATES, css=CSS)
     deck = genanki.Deck(DECK_ID, DECK_NAME)
+    media_files = []
+    missing_audio = []
 
-    for vocab_id, chinese, pinyin, german, audio_zh, audio_py, audio_de, reading_zh, reading_de, _ in HSK2_VOCAB:
+    for vocab_id, chinese, pinyin, german, audio_zh, audio_py, audio_de, reading_zh, reading_de, filename in HSK2_VOCAB:
+        audio_path = AUDIO_DIR / filename
+        if audio_path.is_file():
+            audio_sentence = f"{audio_zh}[sound:{filename}]"
+            media_files.append(str(audio_path))
+        else:
+            audio_sentence = audio_zh
+            missing_audio.append(filename)
+
         deck.add_note(genanki.Note(
             model=model,
             guid=genanki.guid_for("hsk2-german-standalone", vocab_id),
             fields=[
-                chinese, pinyin, german, audio_zh, audio_py, audio_de, reading_zh, reading_de,
+                chinese, pinyin, german, audio_sentence, audio_py, audio_de, reading_zh, reading_de,
             ],
         ))
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     package = genanki.Package(deck)
+    package.media_files = media_files
     package.write_to_file(str(output_path))
 
     print(f"Created {output_path}")
     print(f"  150 vocabulary entries -> 300 cards (2 templates per entry)")
+    print(f"  Sentence audio files embedded: {len(media_files)}/150")
+    if missing_audio:
+        print("  Missing sentence audio: " + ", ".join(missing_audio))
 
 
 def main() -> None:
