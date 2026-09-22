@@ -842,6 +842,7 @@ FIELDS = [
     {"name": "Hanzi"},
     {"name": "Pinyin"},
     {"name": "Meaning"},
+    {"name": "WordSound"},
     {"name": "AudioSentenceCN"},
     {"name": "AudioSentenceSound"},
     {"name": "AudioSentencePY"},
@@ -895,6 +896,8 @@ TEMPLATES = [
         "afmt": """\
 {{FrontSide}}
 <hr>
+<div class="audio-control">{{WordSound}}</div>
+<div class="hint">Aussprache wiederholen</div>
 <div class="pinyin">{{Pinyin}}</div>
 <div class="german">{{Meaning}}</div>
 """,
@@ -908,6 +911,7 @@ def validate_deck_structure() -> None:
         "Hanzi",
         "Pinyin",
         "Meaning",
+        "WordSound",
         "AudioSentenceCN",
         "AudioSentenceSound",
         "AudioSentencePY",
@@ -943,8 +947,12 @@ def validate_deck_structure() -> None:
     vocabulary_front_fields = re.findall(r"{{([^}]+)}}", vocabulary["qfmt"])
     if vocabulary_front_fields != ["Hanzi"]:
         raise ValueError("The vocabulary-card front must show only the isolated word.")
-    if "{{Pinyin}}" not in vocabulary["afmt"] or "{{Meaning}}" not in vocabulary["afmt"]:
-        raise ValueError("The vocabulary-card back must reveal pinyin and meaning.")
+    if (
+            "{{WordSound}}" not in vocabulary["afmt"]
+            or "{{Pinyin}}" not in vocabulary["afmt"]
+            or "{{Meaning}}" not in vocabulary["afmt"]
+    ):
+        raise ValueError("The vocabulary-card back must reveal pronunciation, pinyin, and meaning.")
 
 
 def validate_vocabulary() -> None:
@@ -1004,13 +1012,13 @@ def validate_generated_package(output_path: Path, expected_audio: set[str]) -> N
         )
     if embedded_audio != expected_audio:
         raise ValueError(
-            f"Generated package embeds {len(embedded_audio)} expected sentence-audio files; "
-            "expected all 300."
+            f"Generated package embeds {len(embedded_audio)} expected audio files; "
+            "expected all 450."
         )
 
 
 def build_deck(output_path: Path) -> None:
-    """Create and verify the package with all listening and reading MP3s embedded."""
+    """Create and verify the package with listening, reading, and word MP3s embedded."""
     validate_deck_structure()
     validate_vocabulary()
     model = genanki.Model(MODEL_ID, DECK_NAME, fields=FIELDS, templates=TEMPLATES, css=CSS)
@@ -1022,17 +1030,22 @@ def build_deck(output_path: Path) -> None:
         audio_path = AUDIO_DIR / filename
         reading_filename = f"{vocab_id}_reading.mp3"
         reading_audio_path = AUDIO_DIR / reading_filename
+        word_filename = f"{vocab_id}_word.mp3"
+        word_audio_path = AUDIO_DIR / word_filename
         if not audio_path.is_file():
             raise FileNotFoundError(f"Required listening audio is missing: {audio_path}")
         if not reading_audio_path.is_file():
             raise FileNotFoundError(f"Required reading audio is missing: {reading_audio_path}")
-        media_files.extend((str(audio_path), str(reading_audio_path)))
+        if not word_audio_path.is_file():
+            raise FileNotFoundError(f"Required word audio is missing: {word_audio_path}")
+        media_files.extend((str(audio_path), str(reading_audio_path), str(word_audio_path)))
 
         deck.add_note(genanki.Note(
             model=model,
             guid=genanki.guid_for("hsk2-german-standalone", vocab_id),
             fields=[
-                chinese, pinyin, german, audio_zh, f"[sound:{filename}]", audio_py, audio_de,
+                chinese, pinyin, german, f"[sound:{word_filename}]",
+                audio_zh, f"[sound:{filename}]", audio_py, audio_de,
                 reading_zh, f"[sound:{reading_filename}]", reading_py, reading_de,
             ],
         ))
@@ -1045,7 +1058,7 @@ def build_deck(output_path: Path) -> None:
 
     print(f"Created {output_path}")
     print("  150 vocabulary entries -> 450 cards (3 templates per entry)")
-    print(f"  Sentence audio files embedded: {len(media_files)}/300")
+    print(f"  Audio files embedded: {len(media_files)}/450")
 
 
 def main() -> None:
