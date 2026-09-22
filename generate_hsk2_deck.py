@@ -21,7 +21,7 @@ import genanki
 
 MODEL_ID = 1607392388
 DECK_ID = 2059384721
-DECK_NAME = "HSK 2 - Offizieller Wortschatz (Hör- & Leseverstehen)"
+DECK_NAME = "HSK 2"
 OUTPUT_FILE = "HSK2_DualTask_Deck.apkg"
 SCRIPT_DIR = Path(__file__).resolve().parent
 AUDIO_DIR = SCRIPT_DIR / "audio"
