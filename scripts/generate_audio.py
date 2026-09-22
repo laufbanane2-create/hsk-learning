@@ -2,8 +2,8 @@
 """
 Build-time audio generation script for HSK Learning.
 
-Generates MP3 files for every HSK 1 and HSK 2 vocabulary word and audio example
-sentence, plus HSK 2 reading-comprehension sentences, declared in their standalone
+Generates MP3 files for every HSK 1 and HSK 2 vocabulary word, audio example
+sentence, and reading-comprehension sentence declared in their standalone
 deck generators. Uses the ElevenLabs API (model: eleven_v3, voice: Bella) and
 writes files to audio/ at the repository root.
 
@@ -49,10 +49,9 @@ def load_deck_vocabulary(level):
 
     try:
         audio_text = [(f"{entry[0]}.mp3", entry[4]) for entry in vocabulary]
-        if level == "hsk2":
-            audio_text.extend(
-                (f"{entry[0]}_reading.mp3", entry[6]) for entry in vocabulary
-            )
+        audio_text.extend(
+            (f"{entry[0]}_reading.mp3", entry[6]) for entry in vocabulary
+        )
         return audio_text + [
             (f"{entry[0]}_word.mp3", entry[1]) for entry in vocabulary
         ]
