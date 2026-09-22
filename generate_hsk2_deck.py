@@ -864,7 +864,7 @@ TEMPLATES = [
 <div class="german">{{ReadingSentenceDE}}</div>
 <div class="word">{{Hanzi}}</div>
 <div class="pinyin">[{{Pinyin}}]</div>
-<div class="german">— {{Meaning}}</div>
+<div class="german">{{Meaning}}</div>
 """,
     },
     {
@@ -881,20 +881,19 @@ TEMPLATES = [
 <div class="german">{{AudioSentenceDE}}</div>
 <div class="word">{{Hanzi}}</div>
 <div class="pinyin">[{{Pinyin}}]</div>
-<div class="german">— {{Meaning}}</div>
+<div class="german">{{Meaning}}</div>
 """,
     },
     {
         "name": "3. Wortschatz",
         "qfmt": """\
-<div class="hint">[Wortschatz]</div>
 <div class="word">{{Hanzi}}</div>
 """,
         "afmt": """\
 {{FrontSide}}
 <hr>
 <div class="pinyin">{{Pinyin}}</div>
-<div class="german">— {{Meaning}}</div>
+<div class="german">{{Meaning}}</div>
 """,
     },
 ]
