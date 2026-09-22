@@ -16,7 +16,8 @@ HSK (汉语水平考试, *Hànyǔ Shuǐpíng Kǎoshì*) is the official Chinese 
 
 ### Generate Audio Files
 
-Word and audio-example-sentence audio are generated with the ElevenLabs API.
+Word, audio-example-sentence, and reading-comprehension-sentence audio are
+generated with the ElevenLabs API.
 You need an API key.
 
 ```bash
@@ -58,8 +59,9 @@ is named **HSK 1/2 - Offizieller Wortschatz (Hör- & Leseverstehen)**.
 | **2. Hörverstehen** | Visible, replayable embedded sentence-audio control | Chinese sentence, sentence pinyin, German translation, word, pinyin, and German meaning |
 | **3. Wortschatz** | Isolated Chinese word | Pinyin and German meaning |
 
-Each generator verifies the actual package contains 150 notes, 450 cards, and
-all 150 required sentence-audio files.
+Each generator verifies the actual package contains 150 notes and 450 cards, and
+embeds its 150 reading-sentence and 150 listening-sentence audio files. Reading
+audio plays on the answer card.
 
 ## Project Structure
 

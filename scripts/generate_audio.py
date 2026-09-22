@@ -2,10 +2,10 @@
 """
 Build-time audio generation script for HSK Learning.
 
-Generates MP3 files for every HSK 1 and HSK 2 vocabulary word and audio example
-sentence declared in their standalone deck generators, using the ElevenLabs API
-(model: eleven_v3, voice: Bella), and writes them to audio/ at the repository
-root.
+Generates MP3 files for every HSK 1 and HSK 2 vocabulary word, audio example
+sentence, and reading-comprehension sentence declared in their standalone
+deck generators. Uses the ElevenLabs API (model: eleven_v3, voice: Bella) and
+writes files to audio/ at the repository root.
 
 Usage:
     python3 scripts/generate_audio.py --api-key <ELEVENLABS_API_KEY>
@@ -27,7 +27,7 @@ import urllib.request
 
 
 def load_deck_vocabulary(level):
-    """Read the canonical, ordered vocabulary from a standalone deck."""
+    """Read the canonical, ordered audio text from a standalone deck."""
     project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     deck_path = os.path.join(project_root, f"generate_{level}_deck.py")
     vocabulary_name = f"{level.upper()}_VOCAB"
@@ -48,7 +48,13 @@ def load_deck_vocabulary(level):
         raise RuntimeError(f"Expected 150 {level.upper()} entries in {deck_path}.")
 
     try:
-        return [(entry[0], entry[1], entry[4]) for entry in vocabulary]
+        audio_text = [(f"{entry[0]}.mp3", entry[4]) for entry in vocabulary]
+        audio_text.extend(
+            (f"{entry[0]}_reading.mp3", entry[6]) for entry in vocabulary
+        )
+        return audio_text + [
+            (f"{entry[0]}_word.mp3", entry[1]) for entry in vocabulary
+        ]
     except (IndexError, TypeError) as error:
         raise RuntimeError(f"Invalid {vocabulary_name} entry in {deck_path}.") from error
 
@@ -111,13 +117,7 @@ def main() -> None:
     output_dir = args.output_dir or os.path.join(project_root, "audio")
     os.makedirs(output_dir, exist_ok=True)
 
-    work = [
-        (f"{vocab_id}.mp3", sentence)
-        for vocab_id, _, sentence in VOCABULARY
-    ] + [
-        (f"{vocab_id}_word.mp3", chinese)
-        for vocab_id, chinese, _ in VOCABULARY
-    ]
+    work = VOCABULARY
 
     total = len(work)
     generated = 0
