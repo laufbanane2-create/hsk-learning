@@ -25,9 +25,10 @@ python scripts/generate_audio.py --api-key YOUR_ELEVENLABS_KEY
 ```
 
 Generated `.mp3` files are placed in `audio/` at the repository root. Each HSK
-entry has a word-audio file and an audio-example-sentence file. Each standalone
-deck embeds its 150 matching sentence MP3s for listening prompts; it does not
-use Anki's native Chinese TTS.
+entry has word, audio-example-sentence, and reading-comprehension-sentence audio.
+Each standalone deck embeds all 450 matching MP3s: word audio plays on
+Wortschatz answers, and reading audio plays on Leseverstehen answers. It does
+not use Anki's native Chinese TTS.
 
 Options:
 
@@ -57,11 +58,12 @@ is named **HSK 1/2 - Offizieller Wortschatz (Hör- & Leseverstehen)**.
 |-----------|-------|------|
 | **1. Leseverstehen** | Chinese reading sentence | Sentence pinyin, German translation, word, pinyin, and German meaning |
 | **2. Hörverstehen** | Visible, replayable embedded sentence-audio control | Chinese sentence, sentence pinyin, German translation, word, pinyin, and German meaning |
-| **3. Wortschatz** | Isolated Chinese word | Pinyin and German meaning |
+| **3. Wortschatz** | Isolated Chinese word | Word pronunciation audio, pinyin, and German meaning |
 
 Each generator verifies the actual package contains 150 notes and 450 cards, and
-embeds its 150 reading-sentence and 150 listening-sentence audio files. Reading
-audio plays on the answer card.
+embeds its 150 word, 150 reading-sentence, and 150 listening-sentence audio
+files. Word audio plays only on Wortschatz answers, while reading audio plays on
+Leseverstehen answers.
 
 ## Project Structure
 
