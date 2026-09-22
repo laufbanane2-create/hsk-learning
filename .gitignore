@@ -9,5 +9,6 @@
 .cxx
 local.properties
 
-# Generated Anki deck (binary artifact — regenerate with scripts/generate_anki_deck.py)
+# Generated Anki decks (binary artifacts — regenerate with generate_hsk2_deck.py)
+/HSK2_DualTask_Deck.apkg
 scripts/*.apkg
