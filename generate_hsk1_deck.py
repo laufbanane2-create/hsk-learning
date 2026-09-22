@@ -25,7 +25,7 @@ DECK_NAME = "HSK 1 - Offizieller Wortschatz (Hör- & Leseverstehen)"
 OUTPUT_FILE = "HSK1_DualTask_Deck.apkg"
 SCRIPT_DIR = Path(__file__).resolve().parent
 AUDIO_DIR = SCRIPT_DIR / "audio"
-PINYIN_VALUE_PATTERN = re.compile(r"^[A-Za-zÀ-ɏ ，。！？、：]+$")
+PINYIN_VALUE_PATTERN = re.compile(r"^[A-Za-zÀ-ɏ ，。！？、：,.!?'']+$")
 
 # The order is the official HSK 1.0 list of 150 vocabulary words. Every
 # vocabulary row is expanded with hard-coded pinyin transcriptions below.
@@ -658,6 +658,12 @@ READING_SENTENCE_PINYIN = {
     'hsk1_zuo2': 'Qǐng dú：Qǐng zuò.',
     'hsk1_zuo': 'Qǐng dú：Wǒ zuò fàn.',
 }
+
+HSK1_VOCAB = [
+    entry[:5] + (AUDIO_SENTENCE_PINYIN[entry[0]],) + entry[5:7]
+    + (READING_SENTENCE_PINYIN[entry[0]],) + entry[7:]
+    for entry in HSK1_VOCAB
+]
 
 CSS = """
 .card {
