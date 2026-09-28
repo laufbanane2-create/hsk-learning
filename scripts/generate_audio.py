@@ -140,7 +140,7 @@ def main() -> None:
             # Very short texts (single characters) sometimes yield empty or
             # clipped audio; a trailing full stop makes the model treat them as
             # a complete utterance. Keep the longest response.
-            for attempt_text in (text, text, f"{text}。", f"{text}。"):
+            for attempt_text in (text, text, f"{text}。", f"{text}？", f"{text}！"):
                 response = generate_mp3(attempt_text, api_key)
                 if len(response) > len(audio_bytes):
                     audio_bytes = response
