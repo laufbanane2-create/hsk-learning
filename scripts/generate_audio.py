@@ -134,8 +134,10 @@ def main() -> None:
         print(f"[{idx}/{total}] GEN   {filename}: {text}")
         try:
             audio_bytes = b""
-            for _attempt in range(3):
-                audio_bytes = generate_mp3(text, api_key)
+            # Very short texts (single characters) sometimes yield empty audio;
+            # a trailing full stop makes the model treat them as an utterance.
+            for attempt_text in (text, text, f"{text}。", f"{text}。"):
+                audio_bytes = generate_mp3(attempt_text, api_key)
                 if audio_bytes:
                     break
                 time.sleep(REQUEST_DELAY)
