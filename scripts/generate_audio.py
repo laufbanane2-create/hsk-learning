@@ -72,6 +72,9 @@ API_URL = f"https://api.elevenlabs.io/v1/text-to-speech/{VOICE_ID}"
 # Seconds to wait between requests to respect rate limits.
 REQUEST_DELAY = 0.5
 
+# Responses below ~0.4 s of 128 kbps MP3 are clipped or silent.
+MIN_AUDIO_BYTES = 8000
+
 
 def generate_mp3(text: str, api_key: str) -> bytes:
     payload = json.dumps({
@@ -126,14 +129,30 @@ def main() -> None:
 
     for idx, (filename, text) in enumerate(work, start=1):
         out_path = os.path.join(output_dir, filename)
-        if os.path.exists(out_path) and not args.force:
+        if os.path.exists(out_path) and os.path.getsize(out_path) > 0 and not args.force:
             print(f"[{idx}/{total}] SKIP  {filename} (already exists)")
             skipped += 1
             continue
 
         print(f"[{idx}/{total}] GEN   {filename}: {text}")
         try:
-            audio_bytes = generate_mp3(text, api_key)
+            audio_bytes = b""
+            # Very short texts (single characters) sometimes yield empty or
+            # clipped audio; a trailing full stop makes the model treat them as
+            # a complete utterance. Keep the longest response.
+            for attempt_text in (text, text, f"{text}。", f"{text}？", f"{text}！"):
+                response = generate_mp3(attempt_text, api_key)
+                if len(response) > len(audio_bytes):
+                    audio_bytes = response
+                if len(audio_bytes) >= MIN_AUDIO_BYTES:
+                    break
+                time.sleep(REQUEST_DELAY)
+            if not audio_bytes:
+                print("        ERROR empty audio response", file=sys.stderr)
+                failed += 1
+                continue
+            if len(audio_bytes) < MIN_AUDIO_BYTES:
+                print(f"        WARN  audio is very short ({len(audio_bytes)} bytes)")
             with open(out_path, "wb") as audio_file:
                 audio_file.write(audio_bytes)
             generated += 1
