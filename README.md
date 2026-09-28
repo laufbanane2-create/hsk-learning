@@ -89,6 +89,16 @@ Every entry includes:
 - A Chinese audio-example sentence, hard-coded pinyin, and German translation
 - A distinct Chinese reading-example sentence, hard-coded pinyin, and German translation
 
+Example sentences only use vocabulary from the deck's level and the levels
+below it (HSK 1 sentences use HSK 1 words; HSK 2 sentences use HSK 1 + 2 words),
+apart from personal and place names.
+
+Pinyin conventions:
+- 一 and 不 are written with their citation tones (yī, bù); tone sandhi is not marked.
+- Neutral tones follow the official HSK word lists (e.g. xǐhuan, xuésheng, yīfu).
+- 不 in potential complements is neutral (mǎi bu qǐ, kàn bu dǒng).
+- Place and person names are capitalised (Běijīng, Lǐ Míng).
+
 ## Contributing
 
 Pull requests are welcome. When adding vocabulary:
