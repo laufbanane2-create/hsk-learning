@@ -126,14 +126,23 @@ def main() -> None:
 
     for idx, (filename, text) in enumerate(work, start=1):
         out_path = os.path.join(output_dir, filename)
-        if os.path.exists(out_path) and not args.force:
+        if os.path.exists(out_path) and os.path.getsize(out_path) > 0 and not args.force:
             print(f"[{idx}/{total}] SKIP  {filename} (already exists)")
             skipped += 1
             continue
 
         print(f"[{idx}/{total}] GEN   {filename}: {text}")
         try:
-            audio_bytes = generate_mp3(text, api_key)
+            audio_bytes = b""
+            for _attempt in range(3):
+                audio_bytes = generate_mp3(text, api_key)
+                if audio_bytes:
+                    break
+                time.sleep(REQUEST_DELAY)
+            if not audio_bytes:
+                print("        ERROR empty audio response", file=sys.stderr)
+                failed += 1
+                continue
             with open(out_path, "wb") as audio_file:
                 audio_file.write(audio_bytes)
             generated += 1

@@ -1035,11 +1035,11 @@ def build_deck(output_path: Path) -> None:
         reading_audio_path = AUDIO_DIR / reading_filename
         word_filename = f"{vocab_id}_word.mp3"
         word_audio_path = AUDIO_DIR / word_filename
-        if not audio_path.is_file():
+        if not audio_path.is_file() or audio_path.stat().st_size == 0:
             raise FileNotFoundError(f"Required listening audio is missing: {audio_path}")
-        if not reading_audio_path.is_file():
+        if not reading_audio_path.is_file() or reading_audio_path.stat().st_size == 0:
             raise FileNotFoundError(f"Required reading audio is missing: {reading_audio_path}")
-        if not word_audio_path.is_file():
+        if not word_audio_path.is_file() or word_audio_path.stat().st_size == 0:
             raise FileNotFoundError(f"Required word audio is missing: {word_audio_path}")
         media_files.extend((str(audio_path), str(reading_audio_path), str(word_audio_path)))
 
